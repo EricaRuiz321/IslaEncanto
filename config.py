@@ -11,3 +11,5 @@ class Config:
     GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
     # development helper: when True and real Google creds are missing, /google-login will use a simulated login
     ENABLE_DEV_GOOGLE = os.environ.get('ENABLE_DEV_GOOGLE', '1') == '1'
+    
+    

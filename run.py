@@ -86,9 +86,6 @@ oauth.register(
     client_kwargs={"scope": "openid email profile"},
 )
 
-# Debug: confirma que las variables de entorno sí se están leyendo
-print("CLIENT_ID cargado:---------------------------------", os.getenv("CLIENT_ID"), flush=True)
-
 # ------------------- Registro de Blueprints -------------------
 from routes.registro import registro_bp
 from routes.main import main_bp
