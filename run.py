@@ -14,7 +14,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-
+# Configuración de la aplicación Flask
 app = Flask(__name__)
 app.config.from_object(Config)
 app.secret_key = 'isla_encanto'
