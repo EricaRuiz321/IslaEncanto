@@ -5,7 +5,10 @@ from models.baseDatos import nuevaHabitacion
 main_bp = Blueprint('main', __name__)
 
 #Rutas Home ---------------------------------------------------------
- 
+@main_bp.route("/health")
+def health():
+    return {"status": "ok"}, 200
+
 @main_bp.route('/')
 def home():
     return render_template('home/Home.html')
