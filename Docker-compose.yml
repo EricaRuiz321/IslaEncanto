@@ -1,0 +1,13 @@
+services:
+  web:
+    image: python:3.13-alpine
+    build: 
+      context: . #"https://github.com/EricaRuiz321/IslaEncanto.git"
+      dockerfile: Dockerfile
+    ports:
+      - 5000:5000
+    volumes:
+      - .:/app
+    environment:
+      - CLIENT_ID=$CLIENT_ID
+      - CLIENT_SECRET=$CLIENT_SECRET
