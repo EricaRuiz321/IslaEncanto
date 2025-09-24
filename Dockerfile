@@ -1,4 +1,4 @@
-FROM python:3.13-alpine 
+FROM python:3.13-alpine
 # Establecer el directorio de trabajo
 WORKDIR /app
 # Copiar requirements.txt e instalar dependencias
