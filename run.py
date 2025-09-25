@@ -77,6 +77,7 @@ except Exception:
 
 # ---------------- GOOGLE OAUTH ---------------- #
 oauth = OAuth(app)
+app.config['OAUTH'] = oauth
 
 oauth.register(
     name="google",
