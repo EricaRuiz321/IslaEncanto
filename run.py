@@ -91,7 +91,7 @@ oauth.register(
 from routes.registro import registro_bp
 from routes.main import main_bp
 from routes.auth import auth_bp
-from routes.dashboard.admin import admin_bp
+from routes.dashboard.hospedaje_admin import admin_bp
 from routes.recuperar_contraseña import recuperar_bp
 from routes.usuario.hospedaje_usuario_routes import hospedaje_usuario_bp
 from routes.usuario.perfil_usuario_routes import perfil_usuario_bp
