@@ -443,7 +443,17 @@ body {
 @media (max-width: 700px) {
     .recover-card { width: 92%; padding: 1.5rem; }
 }
+/* Asegurar que los flash messages estén por encima del hero-image */
+.flash-container {
+  position: relative;
+  z-index: 1200; /* mayor que el hero-image (que usa z-index:0) y que el navbar si fuera menor */
+}
 
+/* Si quieres que cada alerta esté posicionada explícitamente */
+.flash-container .alert {
+  position: relative;
+  z-index: 1200;
+}
 /* Centrar el enlace de 'olvidaste contraseña' y hacerlo proporcional */
 .forgot-link {
     text-align: center;
