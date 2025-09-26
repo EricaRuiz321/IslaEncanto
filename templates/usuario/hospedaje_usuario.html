@@ -1,152 +1,82 @@
-{% extends 'dashboard/base.html' %}
+{% extends 'usuario/base.html' %}  
 
 {% block content %}
-
-<!-- Si tu base no carga Bootstrap, descomenta estas líneas o añádelas en dashboard/base.html -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<!-- /fin Bootstrap CSS -->
-
 <br>
-
 <div class="container mt-5">
-    <div class="row" id="habitaciones-usuario">
-        {% for h in habitaciones %}
-        <div class="col-md-4 mb-4">
-            <div class="card habitacion-card" style="min-height: 300px; display: flex; flex-direction: column; justify-content: space-between;">
-                <img src="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}" 
-                     class="card-img-top" alt="{{ h.nombre }}" style="height: 200px; object-fit: cover;">
-                <div class="card-body text-center">
-                    <!-- Botón Especificaciones (abre modal único por habitación) -->
-                    <button type="button" class="btn btn-primary btn-sm me-2" data-bs-toggle="modal" data-bs-target="#modalHabitacion{{ h.id }}">
-                        Especificaciones
-                    </button>
+  <div class="row" id="habitaciones-user">
+    {% if habitaciones|length == 0 %}
+      <div class="col-12">
+        <div class="alert alert-info">Por el momento no hay habitaciones disponibles. Vuelve pronto.</div>
+      </div>
+    {% endif %}
 
-                    <!-- Botón Reservar (dinámico: redirige a tu ruta reservar) -->
-                    <a href="{{ url_for('hospedaje_usuario.reservar_habitacion', habitacion_id=h.id) }}" 
-                       class="btn btn-success btn-sm">
-                        Reservar
-                    </a>
-                </div>
+    {% for h in habitaciones %}
+      <div class="col-md-4 mb-4">
+        <div class="card habitacion-card estado-{{ h.estado|lower }}" 
+             style="min-height:420px; max-height:420px; display:flex; flex-direction:column; justify-content:space-between; position:relative;">
+          
+          <!-- Imagen -->
+          <img src="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}" 
+               class="card-img-top" alt="{{ h.nombre }}" style="height:200px; object-fit:cover;">
+
+          <!-- Estado / Badge ARRIBA -->
+          <span class="badge estado-label {{ h.estado|lower }}" 
+                style="position:absolute; top:16px; right:16px; font-size:0.9rem; padding:0.5em 1em; border-radius:1rem;">
+            {{ h.estado }}
+          </span>
+
+          <!-- Cuerpo -->
+          <div class="card-body d-flex flex-column" style="flex:1 1 auto;">
+            <h5 class="card-title">{{ h.nombre }}</h5>
+            <p class="card-text mb-2">
+              <strong>Cupo:</strong> {{ h.cupo_personas }} <br>
+              <strong>Precio:</strong> ${{ '{:,.0f}'.format(h.precio) }} COP
+            </p>
+
+            <!-- breve descripción (recortada si es larga) -->
+            <p class="card-text text-muted" style="max-height:64px; overflow:hidden;">
+              {{ h.descripcion or "Sin descripción." }}
+            </p>
+
+            <!-- Botón Leer más (abajo alineado a la derecha) -->
+            <div class="mt-auto d-flex justify-content-end">
+              <button type="button" class="btn btn-link p-0" 
+                      data-bs-toggle="modal" data-bs-target="#modalHabitacion{{ h.id }}">
+                Leer más
+              </button>
             </div>
+          </div>
         </div>
+      </div>
 
-        <!-- Modal Especificaciones (dinámico) -->
-        <div class="modal fade" id="modalHabitacion{{ h.id }}" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-body row">
-                        <div class="col-md-6">
-                            <img src="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}" 
-                                 class="img-fluid rounded" alt="{{ h.nombre }}">
-                        </div>
-                        <div class="col-md-6 d-flex flex-column justify-content-between">
-                            <div>
-                                <h4>{{ h.nombre }}</h4>
-                                <p><strong>Precio:</strong> ${{ '{:,.0f}'.format(h.precio) }} COP</p>
-                                <p><strong>Estado:</strong> {{ h.estado }}</p>
-                                <p><strong>Capacidad:</strong> {{ h.cantidad_personas }} personas</p>
-                                <p><strong>Descripción:</strong> {{ h.descripcion if h.descripcion else "Sin descripción" }}</p>
-                            </div>
-
-                            <!-- Reservar dentro del modal (redirige igual que el botón externo) -->
-                            <div class="text-end">
-                                <a href="{{ url_for('hospedaje_usuario.reservar_habitacion', habitacion_id=h.id) }}" class="btn btn-success mt-3">
-                                    Reservar
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+      <!-- Modal para mostrar toda la info de la habitación -->
+      <div class="modal fade" id="modalHabitacion{{ h.id }}" tabindex="-1" aria-labelledby="modalHabitacionLabel{{ h.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="modalHabitacionLabel{{ h.id }}">{{ h.nombre }}</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-        </div>
-
-        {% endfor %}
-
-        <!--CARTAS DE EJEMPLO FIJAS-->
-        <div class="col-md-4 mb-4">
-            <div class="card habitacion-card" style="min-height: 300px; display: flex; flex-direction: column; justify-content: space-between;">
-                <img src="{{ url_for('static', filename='img/habitacion(1).jpg') }}" 
-                     class="card-img-top" alt="Habitación Básica" style="height: 200px; object-fit: cover;">
-                <div class="card-body text-center">
-                    <button type="button" class="btn btn-primary btn-sm me-2" data-bs-toggle="modal" data-bs-target="#modalHabitacionEjemplo1">
-                        Especificaciones
-                    </button>
-                    <!-- Abrir modal de ejemplo (no redirige a DB) -->
-                    <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalHabitacionEjemplo1">Reservar</button>
-                </div>
+            <div class="modal-body">
+              <img src="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}" class="img-fluid mb-3" alt="{{ h.nombre }}">
+              <p><strong>Cupo:</strong> {{ h.cupo_personas }}</p>
+              <p><strong>Precio:</strong> ${{ '{:,.0f}'.format(h.precio) }} COP</p>
+              <p><strong>Estado:</strong> {{ h.estado }}</p>
+              {% if h.descripcion %}
+                <p><strong>Descripción:</strong> {{ h.descripcion }}</p>
+              {% else %}
+                <p><strong>Descripción:</strong> <span class="text-muted">Sin descripción</span></p>
+              {% endif %}
             </div>
-        </div>
-
-        <!-- Modal ejemplo 1 -->
-        <div class="modal fade" id="modalHabitacionEjemplo1" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-body row">
-                        <div class="col-md-6">
-                            <img src="{{ url_for('static', filename='img/habitacion(1).jpg') }}" class="img-fluid rounded" alt="Habitación Básica">
-                        </div>
-                        <div class="col-md-6 d-flex flex-column justify-content-between">
-                            <div>
-                                <h4>Habitación Básica</h4>
-                                <p><strong>Precio:</strong> $120,000 COP</p>
-                                <p><strong>Estado:</strong> Disponible</p>
-                                <p><strong>Capacidad:</strong> 2 personas</p>
-                                <p><strong>Descripción:</strong> Habitación sencilla con cama doble, baño privado y Wi-Fi gratuito.</p>
-                            </div>
-                            <!-- Aquí puedes poner la ruta real si quieres -->
-                            <div class="text-end">
-                                <a href="#" class="btn btn-success mt-3">Reservar</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+              {# Opcional: añadir botón reservar dentro del modal #}
+              {# <a href="{{ url_for('reservas.reservar', habitacion_id=h.id) }}" class="btn btn-primary">Reservar ahora</a> #}
             </div>
+          </div>
         </div>
-
-        <!-- Carta ejemplo 2 -->
-        <div class="col-md-4 mb-4">
-            <div class="card habitacion-card" style="min-height: 300px; display: flex; flex-direction: column; justify-content: space-between;">
-                <img src="{{ url_for('static', filename='img/habitacion(2).jpg') }}" class="card-img-top" alt="Habitación Deluxe" style="height: 200px; object-fit: cover;">
-                <div class="card-body text-center">
-                    <button type="button" class="btn btn-primary btn-sm me-2" data-bs-toggle="modal" data-bs-target="#modalHabitacionEjemplo2">
-                        Especificaciones
-                    </button>
-                    <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalHabitacionEjemplo2">Reservar</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal ejemplo 2 -->
-        <div class="modal fade" id="modalHabitacionEjemplo2" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-body row">
-                        <div class="col-md-6">
-                            <img src="{{ url_for('static', filename='img/habitacion(2).jpg') }}" class="img-fluid rounded" alt="Habitación Deluxe">
-                        </div>
-                        <div class="col-md-6 d-flex flex-column justify-content-between">
-                            <div>
-                                <h4>Habitación Deluxe</h4>
-                                <p><strong>Precio:</strong> $250,000 COP</p>
-                                <p><strong>Estado:</strong> Ocupada</p>
-                                <p><strong>Capacidad:</strong> 4 personas</p>
-                                <p><strong>Descripción:</strong> Habitación de lujo con cama king size, minibar, TV y vista al mar.</p>
-                            </div>
-                            <div class="text-end">
-                                <a href="#" class="btn btn-success mt-3">Reservar</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- /FIN cartas ejemplo -->
-
-    </div>
+      </div>
+    {% endfor %}
+  </div>
 </div>
-
-<!-- Si tu base no carga Bootstrap JS, descomenta o mueve esto al final de dashboard/base.html justo antes de </body> -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<!-- /fin Bootstrap JS -->
-
 {% endblock %}
