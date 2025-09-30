@@ -14,7 +14,7 @@
 					<br>Precio: ${{ '{:,.0f}'.format(h.precio) }} COP</p>
 					<!-- Descripción corta -->
 					<p class="card-text text-muted" style="font-size: 1.05rem;">
-  						{{ h.descripcion[:60] }}{% if h.descripcion|length > 60 %}...{% endif %}
+  						{{ h.descripcion[:30] }}{% if h.descripcion|length > 30 %}...{% endif %}
 					</p>
 					
  					<!-- Botón Leer más -->
