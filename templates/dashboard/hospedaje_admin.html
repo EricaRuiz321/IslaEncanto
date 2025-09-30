@@ -23,8 +23,8 @@
 
  					<!-- Botones Editar y Eliminar -->
  					<div class="d-flex justify-content-end align-items-end mt-3" style="position: absolute; bottom: 10px; right: 10px;">
-						<button class="btn btn-light btn-sm me-2" data-bs-toggle="modal" data-bs-target="#modalEditar{{ h.id }}" title="Editar">
-							<i class="bi bi-pencil-square"></i>
+						<button type="button" class="btn btn-light btn-sm me-2" data-bs-toggle="modal" data-bs-target="#modalEditar{{ h.id }}" title="Editar">
+    						<i class="bi bi-pencil-square"></i>
 						</button>
 						<form action="{{ url_for('admin.hospedaje_eliminar', habitacion_id=h.id) }}" method="POST" style="display:inline;">
 							<button type="submit" class="btn btn-light btn-sm" title="Eliminar" onclick="return confirm('¿Seguro que deseas eliminar esta habitación?')">
@@ -34,9 +34,12 @@
 		 			</div>
 		 		</div>
 
-		 		<!-- Modal Leer más -->
+		 	</div>
+		</div>
+
+		<!-- Modal Leer más -->
 		 		<div class="modal fade" id="modalHabitacion{{ h.id }}" tabindex="-1" aria-labelledby="modalHabitacionLabel{{ h.id }}" aria-hidden="true">
-		 			<div class="modal-dialog modal-lg">
+		 			<div class="modal-dialog modal-lg modal-dialog-centered">
 		 				<div class="modal-content">
 		 					<div class="modal-header">
 		 						<h5 class="modal-title" id="modalHabitacionLabel{{ h.id }}">{{ h.nombre }}</h5>
@@ -120,9 +123,6 @@
 						</div>
 					</div>
 				</div>
-
-		 	</div>
-		</div>
 		{% endfor %}
 
 		<!-- Formulario debajo de las cards -->
