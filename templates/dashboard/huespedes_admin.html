@@ -1,0 +1,50 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %} <br>
+
+<div class="container mt-5">
+  <h3 class="mb-4">Huéspedes Actuales</h3>
+  <div class="row">
+    {% for h in huespedes %}
+    <div class="col-md-4 mb-4">
+      <div class="card shadow-sm" style="min-height: 420px;">
+        <img src="{{ url_for('static', filename=h.habitacion.imagen if h.habitacion.imagen else 'img/default.jpg') }}" class="card-img-top" style="height: 200px; object-fit: cover;">
+        <div class="card-body">
+          <h5 class="card-title">{{ h.nombre }}</h5>
+          <p class="card-text">
+            <strong>Habitación:</strong> {{ h.habitacion.nombre }}<br>
+            <strong>Check-in:</strong> {{ h.habitacionHuesped.check_in.strftime("%Y-%m-%d") if h.habitacionHuesped else "—" }}<br>
+            <strong>Check-out:</strong> {{ h.habitacionHuesped.check_out.strftime("%Y-%m-%d") if h.habitacionHuesped else "—" }}
+          </p>
+          <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detalleHuesped{{ h.idHuesped }}">
+            Especificaciones
+          </button>
+        </div>
+      </div>
+    </div>
+
+```
+<!-- Modal Detalle -->
+<div class="modal fade" id="detalleHuesped{{ h.idHuesped }}" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ h.nombre }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Tipo Documento:</strong> {{ h.tipoDocumento }}</p>
+        <p><strong>Número Documento:</strong> {{ h.numeroDocumento }}</p>
+        <p><strong>Teléfono:</strong> {{ h.telefono }}</p>
+        <p><strong>Correo:</strong> {{ h.correo }}</p>
+        <p><strong>Procedencia:</strong> {{ h.procedencia }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+```
+
+  </div>
+</div>
+{% endblock %}
