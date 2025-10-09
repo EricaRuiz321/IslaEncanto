@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from utils.extensions import db, bcrypt, serializer
-from models.baseDatos import Usuario
+from models.usuario import db, Usuario
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -32,7 +32,7 @@ def enviar_email(destinatario, asunto, cuerpo):
 def recuperar_contrasena():
     if request.method == 'POST':
         correo = request.form['correo']
-        usuario = Usuario.query.filter_by(correo=correo).first()
+        usuario = usuario.query.filter_by(correo=correo).first()
 
         if usuario:
             token = serializer.dumps(correo, salt='password-reset-salt')
@@ -62,7 +62,7 @@ def restablecer_contrasena(token):
         flash("El enlace es inválido o ha caducado.", "error")
         return redirect(url_for('recuperar.recuperar_contrasena'))
 
-    usuario = Usuario.query.filter_by(correo=correo).first()
+    usuario = usuario.query.filter_by(correo=correo).first()
     if not usuario:
         flash("El usuario no existe.", "error")
         return redirect(url_for('recuperar.recuperar_contrasena'))
