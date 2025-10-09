@@ -1,0 +1,188 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<br>
+<div class="container mt-5">
+	<div class="row" id="habitaciones-admin">
+
+		<div class="d-flex justify-content-end mb-3">
+    	<button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevaHabitacion">
+        	+ Agregar Habitación
+    	</button>
+		</div>
+
+		
+		{% for h in habitaciones %}
+		<div class="col-md-4 mb-4">
+			<div class="card habitacion-card estado-{{ h.estado|lower }}" style="min-height: 420px; max-height: 420px; display: flex; flex-direction: column; justify-content: space-between;">
+				<img src="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}" class="card-img-top" alt="{{ h.nombre }}" style="height: 200px; object-fit: cover;">
+				<div class="card-body" style="flex: 1 1 auto;">
+					<h5 class="card-title">{{ h.nombre }}</h5>
+ 					<p class="card-text">Cupo: {{ h.cupo_personas }}
+					<br>Precio: ${{ '{:,.0f}'.format(h.precio) }} COP</p>
+					<!-- Descripción corta -->
+					<p class="card-text text-muted" style="font-size: 1.05rem;">
+  						{{ h.descripcion[:30] }}{% if h.descripcion|length > 30 %}...{% endif %}
+					</p>
+					
+ 					<!-- Botón Leer más -->
+ 					<button type="button" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#modalHabitacion{{ h.id }}">Leer más</button>
+					<span class="badge estado-label {{ h.estado|lower }}">{{ h.estado }}</span>
+
+ 					<!-- Botones Editar y Eliminar -->
+ 					<div class="d-flex justify-content-end align-items-end mt-3" style="position: absolute; bottom: 10px; right: 10px;">
+						<button type="button" class="btn btn-light btn-sm me-2" data-bs-toggle="modal" data-bs-target="#modalEditar{{ h.id }}" title="Editar">
+    						<i class="bi bi-pencil-square"></i>
+						</button>
+						<form action="{{ url_for('admin.hospedaje_eliminar', habitacion_id=h.id) }}" method="POST" style="display:inline;">
+							<button type="submit" class="btn btn-light btn-sm" title="Eliminar" onclick="return confirm('¿Seguro que deseas eliminar esta habitación?')">
+								<i class="bi bi-trash"></i>
+							</button>
+						</form>
+		 			</div>
+		 		</div>
+
+		 	</div>
+		</div>
+
+		<!-- Modal Leer más -->
+		 		<div class="modal fade" id="modalHabitacion{{ h.id }}" tabindex="-1" aria-labelledby="modalHabitacionLabel{{ h.id }}" aria-hidden="true">
+		 			<div class="modal-dialog modal-lg modal-dialog-centered">
+		 				<div class="modal-content">
+		 					<div class="modal-header">
+		 						<h5 class="modal-title" id="modalHabitacionLabel{{ h.id }}">{{ h.nombre }}</h5>
+		 						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+		 					</div>
+		 					<div class="modal-body">
+								<div class="row">
+									<!-- Imagen izquierda -->
+									<div class="col-md-5">
+										<img src="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}" class="img-fluid rounded shadow-sm" alt="{{ h.nombre }}">
+									</div>
+									<!-- Datos derecha -->
+									<div class="col-md-7">
+										<p><strong>Cupo:</strong> {{ h.cupo_personas }}</p>
+										<p><strong>Precio:</strong> ${{ '{:,.0f}'.format(h.precio) }} COP</p>
+										<p><strong>Estado:</strong> {{ h.estado }}</p>
+										{% if h.descripcion %}
+											<p><strong>Descripción:</strong> {{ h.descripcion }}</p>
+										{% else %}
+											<p><strong>Descripción:</strong> <span class="text-muted">Sin descripción</span></p>
+										{% endif %}
+									</div>
+								</div>
+		 					</div>
+		 					<div class="modal-footer">
+		 						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+		 					</div>
+		 				</div>
+		 			</div>
+		 		</div>
+
+				<!-- Modal Editar -->
+				<div class="modal fade" id="modalEditar{{ h.id }}" tabindex="-1" aria-labelledby="modalEditarLabel{{ h.id }}" aria-hidden="true">
+					<div class="modal-dialog modal-lg">
+						<div class="modal-content">
+							<form action="{{ url_for('admin.hospedaje_editar', habitacion_id=h.id) }}" method="POST" enctype="multipart/form-data">
+								<div class="modal-header">
+									<h5 class="modal-title" id="modalEditarLabel{{ h.id }}">Editar {{ h.nombre }}</h5>
+									<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+								</div>
+								<div class="modal-body">
+									<div class="row">
+										<div class="col-md-6">
+											<label class="form-label">Nombre</label>
+											<input type="text" class="form-control" name="nombre" value="{{ h.nombre }}" required>
+										</div>
+										<div class="col-md-6">
+											<label class="form-label">Precio</label>
+											<input type="number" class="form-control" name="precio" value="{{ h.precio }}" required>
+										</div>
+										<div class="col-md-6 mt-3">
+											<label class="form-label">Cupo Personas</label>
+											<input type="number" class="form-control" name="cupo_personas" value="{{ h.cupo_personas }}" required>
+										</div>
+										<div class="col-md-6 mt-3">
+											<label class="form-label">Estado</label>
+											<select class="form-select" name="estado">
+												<option value="Disponible" {% if h.estado == "Disponible" %}selected{% endif %}>Disponible</option>
+												<option value="Mantenimiento" {% if h.estado == "Mantenimiento" %}selected{% endif %}>Mantenimiento</option>
+												<option value="Ocupada" {% if h.estado == "Ocupada" %}selected{% endif %}>Ocupada</option>
+											</select>
+										</div>
+										<div class="col-md-12 mt-3">
+											<label class="form-label">Descripción</label>
+											<textarea class="form-control" name="descripcion" rows="3" required>{{ h.descripcion }}</textarea>
+										</div>
+										<div class="col-md-12 mt-3">
+											<label class="form-label">Imagen</label>
+											<input type="file" class="form-control" name="imagen" accept="image/*">
+											{% if h.imagen %}
+												<small class="text-muted">Actual: {{ h.imagen }}</small>
+											{% endif %}
+										</div>
+									</div>
+								</div>
+								<div class="modal-footer">
+									<button type="submit" class="btn btn-primary">Guardar cambios</button>
+									<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+								</div>
+							</form>
+						</div>
+					</div>
+				</div>
+		{% endfor %}
+
+		<!-- Modal Agregar Nueva Habitación -->
+		<div class="modal fade" id="modalNuevaHabitacion" tabindex="-1" aria-labelledby="modalNuevaHabitacionLabel" aria-hidden="true">
+    		<div class="modal-dialog modal-lg modal-dialog-centered">
+        		<div class="modal-content">
+            		<div class="modal-header">
+                		<h5 class="modal-title" id="modalNuevaHabitacionLabel">Agregar Nueva Habitación</h5>
+                		<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            		</div>
+            		<div class="modal-body">
+                		<!-- 🚨 Tu formulario original aquí, sin cambios de lógica -->
+                		<form action="{{ url_for('admin.hospedaje_nueva') }}" method="POST" enctype="multipart/form-data" class="p-4 rounded shadow" style="background: #fff;">
+                    		<div class="row g-3">
+                        		<div class="col-md-6">
+                            		<label for="nombre" class="form-label">Nombre</label>
+                            		<input type="text" class="form-control" id="nombre" name="nombre" required>
+                        		</div>
+                        		<div class="col-md-3">
+                            		<label for="precio" class="form-label">Precio</label>
+                            		<input type="number" class="form-control" id="precio" name="precio" min="0" step="0.01" required>
+                        		</div>
+                        		<div class="col-md-3">
+                            		<label for="cupo_personas" class="form-label">Cupo Personas</label>
+                            		<input type="number" class="form-control" id="cupo_personas" name="cupo_personas" min="1" required>
+                        		</div>
+                        		<div class="col-md-6">
+                            		<label for="estado" class="form-label">Estado</label>
+                            		<select class="form-select" id="estado" name="estado">
+                                		<option value="Disponible">Disponible</option>
+                                		<option value="Mantenimiento">Mantenimiento</option>
+                                		<option value="Ocupada">Ocupada</option>
+                            		</select>
+                        		</div>
+                        		<div class="col-md-6">
+                            		<label for="imagen" class="form-label">Imagen</label>
+                            		<input type="file" class="form-control" id="imagen" name="imagen" accept="image/*" required>
+                        		</div>
+                        		<div class="col-md-12">
+                            		<label for="descripcion" class="form-label">Descripción</label>
+                            		<textarea class="form-control" id="descripcion" name="descripcion" rows="3" required></textarea>
+                        		</div>
+                    		</div>
+                    		<div class="d-flex justify-content-center mt-4">
+                        		<button type="submit" class="btn btn-main px-5">Agregar Habitación</button>
+                    		</div>
+                		</form>
+            		</div>
+        		</div>
+    		</div>
+		</div>
+
+	</div>
+</div>
+{% endblock %}
