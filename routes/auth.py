@@ -1,5 +1,5 @@
 from flask import Blueprint, request, redirect, url_for, flash, session, current_app
-from models.baseDatos import db, Usuario
+from models.usuario import db, Usuario
 from werkzeug.security import generate_password_hash
 
 auth_bp = Blueprint('auth', __name__)
@@ -32,10 +32,10 @@ def google_authorize():
     user_info = oauth.google.get('https://www.googleapis.com/oauth2/v3/userinfo').json()
 
     # Buscar usuario en BD por correo
-    usuario = Usuario.query.filter_by(correo=user_info['email']).first()
+    usuario = usuario.query.filter_by(correo=user_info['email']).first()
 
     if not usuario:
-        usuario = Usuario(
+        usuario = usuario(
             usuario=user_info.get('name', 'Usuario Google'),
             correo=user_info['email'],
             contrasena=generate_password_hash('google_placeholder', method='pbkdf2:sha256'),  # 🔹 HASH válido
@@ -73,9 +73,9 @@ def google_dev_login():
         'name': 'Usuario Dev'
     }
 
-    usuario = Usuario.query.filter_by(correo=user_info['email']).first()
+    usuario = usuario.query.filter_by(correo=user_info['email']).first()
     if not usuario:
-        usuario = Usuario(
+        usuario = usuario(
             usuario=user_info.get('name', 'Usuario Dev'),
             correo=user_info['email'],
             contrasena=generate_password_hash('google_dev_placeholder', method='pbkdf2:sha256'),  # 🔹 HASH válido
@@ -106,7 +106,7 @@ def password_recover():
         flash('Por favor ingresa un correo electrónico')
         return redirect(url_for('registro.login'))
 
-    usuario = Usuario.query.filter_by(correo=correo).first()
+    usuario = usuario.query.filter_by(correo=correo).first()
     if usuario:
         flash('Si existe una cuenta con ese correo, se han enviado instrucciones a tu correo (simulado).')
     else:
