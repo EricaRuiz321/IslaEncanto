@@ -80,6 +80,7 @@ def home_admin():
 @main_bp.route('/hospedaje_admin')
 def hospedaje_admin():
     habitaciones = NuevaHabitacion.query.all()
+    print(habitaciones)
     return render_template('dashboard/hospedaje_admin.html', habitaciones=habitaciones)
 
 @main_bp.route('/restaurante_admin')
