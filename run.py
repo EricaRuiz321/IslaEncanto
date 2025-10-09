@@ -9,6 +9,7 @@ from routes.auth import auth_bp
 from authlib.integrations.flask_client import OAuth
 from utils.extensions import db, bcrypt, serializer
 from routes.usuario.perfil_usuario_routes import perfil_usuario_bp
+from routes.dashboard.estadisticasgenerales_routes import estadisticasgenerales_bp
 from flask import Blueprint
 import os
 from dotenv import load_dotenv
@@ -91,11 +92,12 @@ oauth.register(
 from routes.registro import registro_bp
 from routes.main import main_bp
 from routes.auth import auth_bp
-from routes.dashboard.hospedaje_admin import admin_bp
+from routes.dashboard.nuevahabitacion_routes import admin_bp
 from routes.recuperar_contraseña import recuperar_bp
 from routes.usuario.habitacionhuesped_routes import habitacionHuesped_bp
 from routes.usuario.huesped_routes import huesped_bp
 from routes.usuario.perfil_usuario_routes import perfil_usuario_bp
+from routes.dashboard.estadisticasgenerales_routes import estadisticasgenerales_bp
 
 
 app.register_blueprint(registro_bp, url_prefix='/registro')
@@ -106,7 +108,7 @@ app.register_blueprint(recuperar_bp, url_prefix='/recuperar')
 app.register_blueprint(habitacionHuesped_bp)
 app.register_blueprint(huesped_bp)
 app.register_blueprint(perfil_usuario_bp, url_prefix='/perfil')
-
+app.register_blueprint(estadisticasgenerales_bp, url_prefix="/admin")
 
 
 # ------------------- Aliases de Rutas (compatibilidad con plantillas) -------------------
@@ -124,15 +126,6 @@ app.add_url_rule('/login', endpoint='login', view_func=_registro.login, methods=
 
 #Ruta de autenticación con Google (implementada en auth.py)
 app.add_url_rule('/google-login', endpoint='google_login', view_func=_auth.google_login)
-
-
-# Aliases para el administrador (dashboard restaurante)
-#from routes import admin as _admin
-#app.add_url_rule('/admin/restaurante', endpoint='admin_restaurante', view_func=_admin.admin_restaurante)
-#app.add_url_rule('/admin/restaurante/nuevo', endpoint='admin_restaurante_nuevo', view_func=_admin.admin_restaurante_nuevo, methods=['GET','POST'])
-#app.add_url_rule('/admin/restaurante/editar/<int:plato_id>', endpoint='admin_restaurante_editar', view_func=_admin.admin_restaurante_editar, methods=['GET','POST'])
-#app.add_url_rule('/admin/restaurante/eliminar/<int:plato_id>', endpoint='admin_restaurante_eliminar', view_func=_admin.admin_restaurante_eliminar, methods=['POST'])
-
 
 # ------------------- Configuración de logs -------------------
 logging.basicConfig(level=logging.DEBUG)
