@@ -2,7 +2,7 @@ from flask import Flask, render_template
 import logging
 from config import Config
 from sqlalchemy import inspect, text
-from models.baseDatos import Usuario
+from models.usuario import Usuario
 from routes.main import main_bp
 from routes.registro import registro_bp
 from routes.auth import auth_bp
@@ -93,7 +93,8 @@ from routes.main import main_bp
 from routes.auth import auth_bp
 from routes.dashboard.hospedaje_admin import admin_bp
 from routes.recuperar_contraseña import recuperar_bp
-from routes.usuario.hospedaje_usuario_routes import hospedaje_usuario_bp
+from routes.usuario.habitacionhuesped_routes import habitacionHuesped_bp
+from routes.usuario.huesped_routes import huesped_bp
 from routes.usuario.perfil_usuario_routes import perfil_usuario_bp
 
 
@@ -102,7 +103,8 @@ app.register_blueprint(main_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(admin_bp, url_prefix='/admin')  # ✅ Registrar blueprint admin
 app.register_blueprint(recuperar_bp, url_prefix='/recuperar')
-app.register_blueprint(hospedaje_usuario_bp, url_prefix='/hospedaje')
+app.register_blueprint(habitacionHuesped_bp)
+app.register_blueprint(huesped_bp)
 app.register_blueprint(perfil_usuario_bp, url_prefix='/perfil')
 
 
