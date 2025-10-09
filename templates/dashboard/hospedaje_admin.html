@@ -1,5 +1,63 @@
 {% extends 'dashboard/base.html' %}
-
 {% block content %}
+<div class="container mt-5">
+  <h2 class="mb-4">📈 Panel de Estadísticas Generales</h2>
 
+  <div class="row">
+    <div class="col-md-4">
+      <div class="card text-center shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Total de Huéspedes</h5>
+          <h2 class="text-success">{{ total_huespedes }}</h2>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-8">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Registros últimos 7 días</h5>
+          <canvas id="graficoHuespedes"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="my-5">
+
+  <h4>🏨 Check-Out de Hoy</h4>
+  <div class="alert alert-info mt-3">
+    Total de check-outs hoy: <strong>{{ check_out_hoy }}</strong>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const ctx = document.getElementById('graficoHuespedes').getContext('2d');
+  const grafico = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: {{ labels|tojson }},
+      datasets: [
+        {
+          label: 'Huéspedes Registrados',
+          data: {{ data_huespedes|tojson }},
+          borderColor: '#007bff',
+          backgroundColor: 'rgba(0, 123, 255, 0.2)',
+          tension: 0.3,
+          fill: true
+        },
+        {
+          label: 'Usuarios Registrados',
+          data: {{ data_usuarios|tojson }},
+          borderColor: '#28a745',
+          backgroundColor: 'rgba(40, 167, 69, 0.2)',
+          tension: 0.3,
+          fill: true
+        }
+      ]
+    },
+    options: { responsive: true, scales: { y: { beginAtZero: true } } }
+  });
+</script>
 {% endblock %}
