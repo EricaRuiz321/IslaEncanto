@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session
+from datetime import date
 from datetime import datetime
-from models.baseDatos import nuevaHabitacion
+from models.nuevahabitacion import NuevaHabitacion
 
 main_bp = Blueprint('main', __name__)
 
@@ -12,7 +13,8 @@ def home():
 
 @main_bp.route('/hospedaje')
 def hospedaje():
-    return render_template('home/Hospedaje.html')
+    habitaciones = NuevaHabitacion.query.order_by(NuevaHabitacion.id.desc()).all()
+    return render_template('home/hospedaje.html', habitaciones=habitaciones)
 
 @main_bp.route('/restaurante')
 def restaurantes():
@@ -53,8 +55,8 @@ def home_usuario():
 
 @main_bp.route('/hospedaje_usuario')
 def hospedaje_usuario():
-    habitaciones = nuevaHabitacion.query.order_by(nuevaHabitacion.id.desc()).all()
-    return render_template('usuario/hospedaje_usuario.html', habitaciones=habitaciones)
+    habitaciones = NuevaHabitacion.query.order_by(NuevaHabitacion.id.desc()).all()
+    return render_template('usuario/hospedaje_usuario.html', habitaciones=habitaciones, current_date=date.today())
 
 @main_bp.route('/restaurante_usuario')
 def restaurante_usuario():
@@ -77,7 +79,7 @@ def home_admin():
 
 @main_bp.route('/hospedaje_admin')
 def hospedaje_admin():
-    habitaciones = nuevaHabitacion.query.all()
+    habitaciones = NuevaHabitacion.query.all()
     return render_template('dashboard/hospedaje_admin.html', habitaciones=habitaciones)
 
 @main_bp.route('/restaurante_admin')
