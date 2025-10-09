@@ -1,4 +1,4 @@
-from flask_sqlalchemy import SQLAlchemy
+"""from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from utils.extensions import db
 
@@ -56,8 +56,6 @@ class habitacionHuesped(db.Model):
     def __repr__(self):
         return f"<HabitacionHuesped {self.nombre} - {self.check_in} to {self.check_out}>"
     
-    
-    
 # ------------------------------
 # Tabla de Huéspedes
 # ------------------------------
@@ -71,13 +69,13 @@ class Huesped(db.Model):
     telefono = db.Column(db.String(20), nullable=True)
     correo = db.Column(db.String(255), nullable=True)
     procedencia = db.Column(db.String(100), nullable=True)
-    nuevaHabitacion_id = db.Column(db.Integer, db.ForeignKey("nuevaHabitacion.id"), nullable=False)
+    habitacion_id = db.Column(db.Integer, db.ForeignKey("nuevaHabitacion.id"), nullable=False)
     
 
     def __repr__(self):
         return f"<Huesped {self.nombre} en habitacionHuesped {self.habitacionHuesped_id}>"
     
-"""# ------------------------------
+# ------------------------------
 # Tabla de Restaurantes
 # ------------------------------
 class Restaurante(db.Model):
