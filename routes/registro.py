@@ -1,18 +1,19 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
-from models.baseDatos import db, Usuario
+from models.usuario import Usuario
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
+from utils.extensions import db
 
 registro_bp = Blueprint('registro', __name__)
 
 @registro_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        usuario = request.form['usuario']
+        nusuario = request.form['usuario']
         contrasena = request.form['contrasena']
 
         # Buscar usuario
-        user = Usuario.query.filter_by(usuario=usuario).first()
+        user = Usuario.query.filter_by(usuario=nusuario).first()
 
         if user:
             print('DEBUG: user.rol =', user.rol)  # <-- Depuración
@@ -65,14 +66,14 @@ def register():
     fechaNacimiento = datetime.strptime(request.form['fechaNacimiento'], "%Y-%m-%d").date()
 
     # Verificar si el correo ya existe
-    if Usuario.query.filter_by(correo=correo).first():
+    if usuario.query.filter_by(correo=correo).first():
         flash('El correo ya está registrado. Intenta con otro.', 'danger')
         return redirect(url_for('registro.login'))
 
     # ✅ Encriptar la contraseña antes de guardarla
     hashed = generate_password_hash(contrasena, method='pbkdf2:sha256')
 
-    nuevo_usuario = Usuario(
+    nuevo_usuario = usuario(
         usuario=usuario,
         correo=correo,
         contrasena=hashed,
