@@ -79,9 +79,8 @@ def home_admin():
 
 @main_bp.route('/hospedaje_admin')
 def hospedaje_admin():
-    habitaciones = NuevaHabitacion.query.all()
-    print(habitaciones)
-    return render_template('dashboard/hospedaje_admin.html', habitaciones=habitaciones)
+    # Redirige al blueprint de estadísticas
+    return redirect(url_for('estadisticasgenerales.dashboard'))
 
 @main_bp.route('/restaurante_admin')
 def restaurante_admin():
