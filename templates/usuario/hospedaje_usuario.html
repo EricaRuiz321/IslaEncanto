@@ -1,26 +1,31 @@
-{% extends 'usuario/base.html' %}  
+{% extends 'usuario/base.html' %}
 
 {% block content %}
 <br>
 <div class="container mt-5">
   <div class="row" id="habitaciones-user">
+
     {% if habitaciones|length == 0 %}
       <div class="col-12">
-        <div class="alert alert-info">Por el momento no hay habitaciones disponibles. Vuelve pronto.</div>
+        <div class="alert alert-info">
+          Por el momento no hay habitaciones disponibles. Vuelve pronto.
+        </div>
       </div>
     {% endif %}
 
     {% for h in habitaciones %}
       <div class="col-md-4 mb-4">
-        <div class="card habitacion-card estado-{{ h.estado|lower }}" 
+        <div class="card habitacion-card estado-{{ h.estado|lower }}"
              style="min-height:420px; max-height:420px; display:flex; flex-direction:column; justify-content:space-between; position:relative;">
-          
+
           <!-- Imagen -->
-          <img src="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}" 
-               class="card-img-top" alt="{{ h.nombre }}" style="height:200px; object-fit:cover;">
+          <img src="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}"
+               class="card-img-top"
+               alt="{{ h.nombre }}"
+               style="height:200px; object-fit:cover;">
 
           <!-- Estado / Badge ARRIBA -->
-          <span class="badge estado-label {{ h.estado|lower }}" 
+          <span class="badge estado-label {{ h.estado|lower }}"
                 style="position:absolute; top:16px; right:16px; font-size:0.9rem; padding:0.5em 1em; border-radius:1rem;">
             {{ h.estado }}
           </span>
@@ -38,111 +43,118 @@
               {{ h.descripcion or "Sin descripción." }}
             </p>
 
-            <!-- Botón Leer más y Reservar(abajo alineado a la derecha) -->
+            <!-- Botón Leer más y Reservar -->
             <div class="mt-auto d-flex justify-content-between">
-              <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#formReserva{{ h.id }}">
-              Reservar
+              <button type="button" class="btn btn-primary"
+                      data-bs-toggle="modal"
+                      data-bs-target="#formReserva{{ h.id }}">
+                Reservar
               </button>
-              <button type="button" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#modalHabitacion{{ h.id }}">
-              Leer más
+
+              <button type="button" class="btn btn-link p-0"
+                      data-bs-toggle="modal"
+                      data-bs-target="#modalHabitacion{{ h.id }}">
+                Leer más
               </button>
             </div>
- 					
           </div>
         </div>
       </div>
- 
-      <!-- Modal Leer más -->
- 
-		 		<div class="modal fade" id="modalHabitacion{{ h.id }}" tabindex="-1" aria-labelledby="modalHabitacionLabel{{ h.id }}" aria-hidden="true">
-		 			<div class="modal-dialog modal-lg modal-dialog-centered">
-		 				<div class="modal-content">
-		 					<div class="modal-header">
-		 						<h5 class="modal-title" id="modalHabitacionLabel{{ h.id }}">{{ h.nombre }}</h5>
-		 						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-		 					</div>
-		 					<div class="modal-body">
-								<div class="row">
-									<!-- Imagen izquierda -->
-									<div class="col-md-5">
-										<img src="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}" class="img-fluid rounded shadow-sm" alt="{{ h.nombre }}">
-									</div>
-									<!-- Datos derecha -->
-									<div class="col-md-7">
-										<p><strong>Cupo:</strong> {{ h.cupo_personas }}</p>
-										<p><strong>Precio:</strong> ${{ '{:,.0f}'.format(h.precio) }} COP</p>
-										<p><strong>Estado:</strong> {{ h.estado }}</p>
-										{% if h.descripcion %}
-											<p><strong>Descripción:</strong> {{ h.descripcion }}</p>
-										{% else %}
-											<p><strong>Descripción:</strong> <span class="text-muted">Sin descripción</span></p>
-										{% endif %}
-									</div>
-								</div>
-		 					</div>
-		 					<div class="modal-footer">
-		 						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-		 					</div>
-		 				</div>
-		 			</div>
-		 		</div>   
-        
 
-        <!-- FORMULARIO RESERVA -->
-      <div class="modal fade" id="formReserva{{ h.id }}" tabindex="-1" aria-labelledby="formReservaLabel{{ h.id }}" aria-hidden="true">
+      <!-- Modal Leer más -->
+      <div class="modal fade" id="modalHabitacion{{ h.id }}" tabindex="-1"
+           aria-labelledby="modalHabitacionLabel{{ h.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="modalHabitacionLabel{{ h.id }}">{{ h.nombre }}</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+              <div class="row">
+                <!-- Imagen izquierda -->
+                <div class="col-md-5">
+                  <img src="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}"
+                       class="img-fluid rounded shadow-sm" alt="{{ h.nombre }}">
+                </div>
+
+                <!-- Datos derecha -->
+                <div class="col-md-7">
+                  <p><strong>Cupo:</strong> {{ h.cupo_personas }}</p>
+                  <p><strong>Precio:</strong> ${{ '{:,.0f}'.format(h.precio) }} COP</p>
+                  <p><strong>Estado:</strong> {{ h.estado }}</p>
+
+                  {% if h.descripcion %}
+                    <p><strong>Descripción:</strong> {{ h.descripcion }}</p>
+                  {% else %}
+                    <p><strong>Descripción:</strong> <span class="text-muted">Sin descripción</span></p>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FORMULARIO RESERVA -->
+      <div class="modal fade" id="formReserva{{ h.id }}" tabindex="-1"
+           aria-labelledby="formReservaLabel{{ h.id }}" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
           <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title" id="formReservaLabel{{ h.id }}">Reservar {{ h.nombre }}</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
+
             <div class="modal-body">
-              <div class="row">
+              <form method="POST" action="{{ url_for('habitacionHuesped.reservar_habitacion') }}">
+                <input type="hidden" name="habitacion_id" value="{{ h.id }}">
 
-                <!-- Formulario derecha -->
-                <div class="col-md-7">
-                  <form method="POST" action="{{ url_for('habitacionHuesped.reservar_habitacion') }}">
-                    <input type="hidden" name="habitacion_id" value="{{ h.id }}">
-
-                    <div class="mb-3">
-                      <label class="form-label">Nombre Habitación</label>
-                      <input type="text" class="form-control" name="nombre" value="{{ h.nombre }}" readonly>
-                    </div>
-
-                    <div class="mb-3">
-                      <label class="form-label">Precio</label>
-                      <input type="text" class="form-control" name="precio" value="{{ h.precio }}" readonly>
-                    </div>
-
-                    <div class="mb-3">
-                      <label class="form-label">Cantidad Personas</label>
-                      <input type="number" class="form-control" name="cantidad_personas" value="{{ h.cupo_personas }}" min="1" max="{{ h.cupo_personas }}" required>
-                    </div>
-
-                    <div class="mb-3">
-                      <label class="form-label">Check-in</label>
-                      <input type="date" class="form-control" name="check_in" value="{{ current_date }}" readonly>
-                    </div>
-
-                    <div class="mb-3">
-                      <label class="form-label">Check-out</label>
-                      <input type="date" class="form-control" name="check_out" required>
-                    </div>
-
-                    <button type="button" class="btn btn-success" data-bs-target="#formDatosPersonales{{ h.id }}" data-bs-toggle="modal"
-                    data-bs-dismiss="modal">Confirmar Reserva</button>
-
-                  </form>
+                <div class="mb-3">
+                  <label class="form-label">Nombre habitación</label>
+                  <input type="text" class="form-control" name="nombre" value="{{ h.nombre }}" readonly>
                 </div>
-              </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Precio</label>
+                  <input type="text" class="form-control" name="precio" value="{{ h.precio }}" readonly>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Cantidad de Personas</label>
+                  <input type="number" class="form-control" name="cantidad_personas"
+                         min="1" max="{{ h.cupo_personas }}"
+                         placeholder="Máximo {{ h.cupo_personas }}"
+                         required>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Check-in</label>
+                  <input type="date" class="form-control" name="check_in"
+                         value="{{ current_date }}" readonly>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Check-out</label>
+                  <input type="date" class="form-control" name="check_out"
+                         min="{{ current_date }}" required>
+                </div>
+
+                <div class="text-end">
+                  <button type="submit" class="btn btn-success">Confirmar Reserva</button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
       </div>
 
-
-      <!-- FORMULARIO DATOS PERSONALES (segundo paso) -->
-      <div class="modal fade" id="formDatosPersonales{{ h.id }}" tabindex="-1" aria-labelledby="formDatosPersonalesLabel{{ h.id }}" aria-hidden="true">
+      <!-- FORMULARIO DATOS PERSONALES -->
+      <div class="modal fade" id="formDatosPersonales{{ h.id }}" tabindex="-1"
+           aria-labelledby="formDatosPersonalesLabel{{ h.id }}" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
           <div class="modal-content">
             <div class="modal-header">
@@ -152,48 +164,71 @@
             <div class="modal-body">
               <form method="POST" action="{{ url_for('huesped.guardar_huesped') }}">
                 <input type="hidden" name="habitacion_id" value="{{ h.id }}">
+
                 <div class="mb-3">
                   <label class="form-label">Habitación</label>
                   <input type="text" class="form-control" name="habitacion_nombre" value="{{ h.nombre }}" readonly>
                 </div>
+
                 <div class="mb-3">
                   <label class="form-label">Nombre</label>
                   <input type="text" class="form-control" name="nombre" required>
                 </div>
+
                 <div class="mb-3">
                   <label class="form-label">Tipo Documento</label>
                   <input type="text" class="form-control" name="tipoDocumento" required>
                 </div>
+
                 <div class="mb-3">
                   <label class="form-label">Número Documento</label>
                   <input type="text" class="form-control" name="numeroDocumento" required>
                 </div>
+
                 <div class="mb-3">
                   <label class="form-label">Procedencia</label>
                   <input type="text" class="form-control" name="procedencia" required>
                 </div>
+
                 <div class="mb-3">
                   <label class="form-label">Teléfono</label>
                   <input type="text" class="form-control" name="telefono" required>
                 </div>
+
                 <div class="mb-3">
                   <label class="form-label">Correo</label>
                   <input type="email" class="form-control" name="correo" required>
                 </div>
-                <div class="text-end">
-                  <button type="submit" class="btn btn-primary">Guardar Datos</button>
-                </div>
+
                 <input type="hidden" name="precio" value="{{ h.precio }}">
                 <input type="hidden" name="cantidad_personas" value="{{ h.cupo_personas }}">
                 <input type="hidden" name="check_in" value="{{ current_date }}">
                 <input type="hidden" name="check_out" value="{{ current_date }}">
+
+                <div class="text-end">
+                  <button type="submit" class="btn btn-primary">Guardar Datos</button>
+                  <button type="submit" name="agregar_otro" value="1" class="btn btn-secondary">
+                    + Agregar Persona
+                  </button>
+                </div>
               </form>
             </div>
           </div>
         </div>
       </div>
-        
     {% endfor %}
   </div>
 </div>
+
+<!-- SCRIPT para abrir modal automáticamente -->
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const habitacionId = "{{ habitacion_id or '' }}";
+    if (habitacionId) {
+      const modal = new bootstrap.Modal(document.getElementById(`formDatosPersonales${habitacionId}`));
+      modal.show();
+    }
+  });
+</script>
+
 {% endblock %}
