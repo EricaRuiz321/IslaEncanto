@@ -1,7 +1,14 @@
 {% extends 'dashboard/base.html' %}
 {% block content %}
+<br>
 <div class="container mt-5">
   <h2 class="mb-4">📈 Panel de Estadísticas Generales</h2>
+
+  <div class="d-flex justify-content-end mb-4">
+    <a href="{{ url_for('estadisticasgenerales.dashboard') }}" class="btn btn-primary me-2">📊 Estadísticas</a>
+    <a href="{{ url_for('main.hospedaje_admin') }}" class="btn btn-secondary me-2">🏠 Habitaciones</a>
+    <a href="{{ url_for('main.home_admin') }}" class="btn btn-success">👥 Huéspedes</a>
+  </div>
 
   <div class="row">
     <div class="col-md-4">
@@ -23,12 +30,34 @@
     </div>
   </div>
 
-  <hr class="my-5">
+  <h3 class="mt-5 mb-3">🏨 Check-outs de hoy ({{ check_out_hoy }})</h3>
 
-  <h4>🏨 Check-Out de Hoy</h4>
-  <div class="alert alert-info mt-3">
-    Total de check-outs hoy: <strong>{{ check_out_hoy }}</strong>
-  </div>
+  {% if checkouts_hoy %}
+  <table class="table table-striped table-bordered">
+    <thead class="table-dark">
+      <tr>
+        <th>Nombre</th>
+        <th>Documento</th>
+        <th>Teléfono</th>
+        <th>Check-in</th>
+        <th>Check-out</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for nombre, documento, telefono, check_in, check_out in checkouts_hoy %}
+      <tr>
+        <td>{{ nombre }}</td>
+        <td>{{ documento }}</td>
+        <td>{{ telefono }}</td>
+        <td>{{ check_in }}</td>
+        <td>{{ check_out }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="alert alert-warning">No hay check-outs para hoy.</div>
+  {% endif %}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
