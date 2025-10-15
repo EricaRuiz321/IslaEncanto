@@ -26,20 +26,12 @@ def guardar_huesped():
         procedencia=procedencia,
         habitacion_id=habitacion_id
     )
-    
     db.session.add(huesped)
-    
-    # Crear reserva también
-    habitacion = HabitacionHuesped(
-        nombre=request.form.get("habitacion_nombre"),
-        precio=request.form.get("precio"),
-        cantidad_personas=request.form.get("cantidad_personas"),
-        check_in=request.form.get("check_in") or date.today(),
-        check_out=request.form.get("check_out")
-    )
-    db.session.add(habitacion)
-
-
     db.session.commit()
 
+    # Si presionó "Agregar otro", volvemos a mostrar el modal
+    if request.form.get("agregar_otro"):
+        return redirect(url_for('habitacionHuesped.hospedaje_usuario', habitacion_id=habitacion_id))
+
+    # Si no, terminamos y regresamos normalmente
     return redirect(url_for('habitacionHuesped.hospedaje_usuario'))
