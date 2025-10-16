@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from datetime import date
 from datetime import datetime
 from models.nuevahabitacion import NuevaHabitacion
+from models.huesped import Huesped
 
 main_bp = Blueprint('main', __name__)
 
@@ -79,8 +80,20 @@ def home_admin():
 
 @main_bp.route('/hospedaje_admin')
 def hospedaje_admin():
-    # Redirige al blueprint de estadísticas
+    huespedes = Huesped.query.all()
+    habitaciones = NuevaHabitacion.query.all()
+    return render_template('dashboard/hospedaje_admin.html', huespedes=huespedes, habitaciones=habitaciones)
+
+@main_bp.route('/habitaciones_admin')
+def habitaciones_admin():
+    habitaciones = NuevaHabitacion.query.order_by(NuevaHabitacion.id.desc()).all()
+    return render_template('dashboard/habitaciones_admin.html', habitaciones=habitaciones)
+
+@main_bp.route('/estadisticas_admin')
+def estadisticas_admin():
+    # Aquí puedes importar tus estadísticas reales o redirigir al blueprint
     return redirect(url_for('estadisticasgenerales.dashboard'))
+
 
 @main_bp.route('/restaurante_admin')
 def restaurante_admin():

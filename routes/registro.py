@@ -66,14 +66,14 @@ def register():
     fechaNacimiento = datetime.strptime(request.form['fechaNacimiento'], "%Y-%m-%d").date()
 
     # Verificar si el correo ya existe
-    if usuario.query.filter_by(correo=correo).first():
+    if Usuario.query.filter_by(correo=correo).first():
         flash('El correo ya está registrado. Intenta con otro.', 'danger')
         return redirect(url_for('registro.login'))
 
     # ✅ Encriptar la contraseña antes de guardarla
     hashed = generate_password_hash(contrasena, method='pbkdf2:sha256')
 
-    nuevo_usuario = usuario(
+    nuevo_usuario = Usuario(
         usuario=usuario,
         correo=correo,
         contrasena=hashed,

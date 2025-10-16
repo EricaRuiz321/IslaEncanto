@@ -12,6 +12,8 @@ class NuevaHabitacion(db.Model):
     estado = db.Column(db.String(20), nullable=False, default="Disponible")
     cupo_personas = db.Column(db.Integer, nullable=False, default=1)
     imagen = db.Column(db.String(255), nullable=True)  # Ruta de la imagen
+    
+    huespedes = db.relationship('Huesped', backref='habitacion', lazy=True, cascade="all, delete")
 
     def __repr__(self):
         return f"<nuevaHabitacion {self.nombre} - {self.estado}>"

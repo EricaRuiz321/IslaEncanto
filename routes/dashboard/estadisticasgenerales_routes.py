@@ -61,17 +61,9 @@ def dashboard():
         data_huespedes.append(registro.total_huespedes if registro else 0)
         data_usuarios.append(registro.usuarios_registrados if registro else 0)
     
-    print("===== DEBUG CHECK-OUTS HOY =====")
-    print("Fecha de hoy:", hoy)
-    print("Total check-outs encontrados:", len(checkouts_hoy))
-    for c in checkouts_hoy:
-        print(c)
-    print("=================================")
-
-    
     # 🔹 Renderizar plantilla
     return render_template(
-        "dashboard/hospedaje_admin.html",
+        "dashboard/estadisticas_admin.html",
         total_huespedes=total_huespedes,
         check_out_hoy=check_out_hoy,
         checkouts_hoy=checkouts_hoy,
@@ -79,5 +71,5 @@ def dashboard():
         data_huespedes=data_huespedes,
         data_usuarios=data_usuarios,
         url_huespedes=url_for('main.home_admin'),
-        url_habitaciones=url_for('main.hospedaje_admin'),
+        url_habitaciones=url_for('main.estadisticas_admin'),
     )

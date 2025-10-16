@@ -1,92 +1,116 @@
 {% extends 'dashboard/base.html' %}
 {% block content %}
-<br>
+<br><br>
+
 <div class="container mt-5">
-  <h2 class="mb-4">📈 Panel de Estadísticas Generales</h2>
 
-  <div class="d-flex justify-content-end mb-4">
-    <a href="{{ url_for('estadisticasgenerales.dashboard') }}" class="btn btn-primary me-2">📊 Estadísticas</a>
-    <a href="{{ url_for('main.hospedaje_admin') }}" class="btn btn-secondary me-2">🏠 Habitaciones</a>
-    <a href="{{ url_for('main.home_admin') }}" class="btn btn-success">👥 Huéspedes</a>
+  <!-- Encabezado con botones -->
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+    <a href="{{ url_for('habitacionHuesped.nuevo_huesped') }}" class="btn btn-primary">
+      + Añadir Huésped
+    </a>
+
+    <div class="d-flex gap-2 mt-2 mt-md-0">
+      <a href="{{ url_for('main.hospedaje_admin') }}" class="btn btn-primary">👥 Huéspedes</a>
+      <a href="{{ url_for('main.habitaciones_admin') }}" class="btn btn-secondary">🏠 Habitaciones</a>
+      <a href="{{ url_for('main.estadisticas_admin') }}" class="btn btn-success">📊 Estadísticas</a>
+    </div>
   </div>
 
+  <!-- Tarjetas de habitaciones -->
   <div class="row">
-    <div class="col-md-4">
-      <div class="card text-center shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title">Total de Huéspedes</h5>
-          <h2 class="text-success">{{ total_huespedes }}</h2>
-        </div>
-      </div>
-    </div>
+    {% for habitacion in habitaciones %}
+      <div class="col-md-4 mb-4">
+        <div class="card border-0 shadow-lg rounded-4 p-3 position-relative"
+             style="background: linear-gradient(145deg, #f9fafc, #ffffff); transition: all 0.3s;">
 
-    <div class="col-md-8">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title">Registros últimos 7 días</h5>
-          <canvas id="graficoHuespedes"></canvas>
+          <!-- Estado -->
+          <span class="badge {{ 'bg-success' if habitacion.estado == 'Disponible' else 'bg-danger' }}"
+                style="position:absolute; top:15px; right:15px; font-size:0.85rem;">
+            {{ habitacion.estado }}
+          </span>
+
+          <div class="card-body">
+            <h5 class="card-title text-primary fw-bold mb-3 text-center">
+              🏠 {{ habitacion.nombre }}
+            </h5>
+
+            {% set huespedes = habitacion.huespedes %}
+            {% if huespedes|length > 0 %}
+              {% for h in huespedes %}
+                <div class="p-3 mb-3 rounded-3" style="background-color:#f4f8ff; border-left:4px solid #0d6efd;">
+                  <p class="mb-1 fw-semibold">👤 {{ h.nombre }}</p>
+                  <p class="text-muted small mb-2">📞 {{ h.telefono }}</p>
+
+                  <!-- Botones -->
+                  <div class="d-flex flex-column gap-2 mt-2">
+                    <button class="btn btn-outline-primary btn-sm"
+                            data-bs-toggle="modal"
+                            data-bs-target="#detalle{{ h.idHuesped }}">
+                      Especificaciones
+                    </button>
+
+                    <form method="POST" action="{{ url_for('habitacionHuesped.liberar_habitacion', habitacion_id=habitacion.id) }}">
+                      <button type="submit" class="btn btn-danger btn-sm w-100">
+                        Liberar habitación
+                      </button>
+                    </form>
+                  </div>
+                </div>
+
+                <!-- Modal Detalle -->
+                <div class="modal fade" id="detalle{{ h.idHuesped }}" tabindex="-1">
+                  <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content rounded-4 shadow">
+                      <div class="modal-header bg-primary text-white rounded-top-4">
+                        <h5 class="modal-title">{{ h.nombre }}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                      </div>
+                      <div class="modal-body">
+                        <p><strong>Tipo Documento:</strong> {{ h.tipoDocumento }}</p>
+                        <p><strong>Número Documento:</strong> {{ h.numeroDocumento }}</p>
+                        <p><strong>Teléfono:</strong> {{ h.telefono }}</p>
+                        <p><strong>Correo:</strong> {{ h.correo }}</p>
+                        <p><strong>Procedencia:</strong> {{ h.procedencia }}</p>
+                        <p><strong>Check-in:</strong> {{ h.check_in }}</p>
+                        <p><strong>Check-out:</strong> {{ h.check_out }}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <p class="text-muted text-center mt-3">Sin huéspedes registrados.</p>
+            {% endif %}
+          </div>
         </div>
       </div>
-    </div>
+    {% endfor %}
   </div>
-
-  <h3 class="mt-5 mb-3">🏨 Check-outs de hoy ({{ check_out_hoy }})</h3>
-
-  {% if checkouts_hoy %}
-  <table class="table table-striped table-bordered">
-    <thead class="table-dark">
-      <tr>
-        <th>Nombre</th>
-        <th>Documento</th>
-        <th>Teléfono</th>
-        <th>Check-in</th>
-        <th>Check-out</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for nombre, documento, telefono, check_in, check_out in checkouts_hoy %}
-      <tr>
-        <td>{{ nombre }}</td>
-        <td>{{ documento }}</td>
-        <td>{{ telefono }}</td>
-        <td>{{ check_in }}</td>
-        <td>{{ check_out }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <div class="alert alert-warning">No hay check-outs para hoy.</div>
-  {% endif %}
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  const ctx = document.getElementById('graficoHuespedes').getContext('2d');
-  const grafico = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: {{ labels|tojson }},
-      datasets: [
-        {
-          label: 'Huéspedes Registrados',
-          data: {{ data_huespedes|tojson }},
-          borderColor: '#007bff',
-          backgroundColor: 'rgba(0, 123, 255, 0.2)',
-          tension: 0.3,
-          fill: true
-        },
-        {
-          label: 'Usuarios Registrados',
-          data: {{ data_usuarios|tojson }},
-          borderColor: '#28a745',
-          backgroundColor: 'rgba(40, 167, 69, 0.2)',
-          tension: 0.3,
-          fill: true
+document.addEventListener("DOMContentLoaded", function() {
+    const habitacionId = "{{ habitacion_id or '' }}";
+    const abrir = "{{ abrir or '' }}";
+
+    if (habitacionId) {
+        let modalId = '';
+
+        // Decide cuál modal abrir
+        if (abrir === 'reserva') {
+            modalId = `formReserva${habitacionId}`;
+        } else {
+            modalId = `formDatosPersonales${habitacionId}`;
         }
-      ]
-    },
-    options: { responsive: true, scales: { y: { beginAtZero: true } } }
-  });
+
+        const modalElement = document.getElementById(modalId);
+        if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        }
+    }
+});
 </script>
+
 {% endblock %}

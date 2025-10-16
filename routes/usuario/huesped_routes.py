@@ -8,6 +8,7 @@ huesped_bp = Blueprint('huesped', __name__)
 
 @huesped_bp.route('/guardar_huesped', methods=['POST'])
 def guardar_huesped():
+    print("1")
     habitacion_id = request.form.get("habitacion_id")
     nombre = request.form.get("nombre")
     tipo_doc = request.form.get("tipoDocumento")
@@ -15,8 +16,10 @@ def guardar_huesped():
     procedencia = request.form.get("procedencia")
     telefono = request.form.get("telefono")
     correo = request.form.get("correo")
+    print("2")
+    if not habitacion_id:
+        return redirect(url_for('habitacionHuesped.hospedaje_usuario'))
 
-    # Guardar huésped
     huesped = Huesped(
         nombre=nombre,
         tipoDocumento=tipo_doc,
@@ -28,10 +31,13 @@ def guardar_huesped():
     )
     db.session.add(huesped)
     db.session.commit()
+    print("3")
 
-    # Si presionó "Agregar otro", volvemos a mostrar el modal
+    # Si presionó "Agregar otro", volvemos a mostrar el formulario para la misma habitación
     if request.form.get("agregar_otro"):
+        print("otro")
         return redirect(url_for('habitacionHuesped.hospedaje_usuario', habitacion_id=habitacion_id))
+    print("4")
 
-    # Si no, terminamos y regresamos normalmente
+    # Si no, redirigir al listado normal
     return redirect(url_for('habitacionHuesped.hospedaje_usuario'))
