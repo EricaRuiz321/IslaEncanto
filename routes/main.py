@@ -3,6 +3,8 @@ from datetime import date
 from datetime import datetime
 from models.nuevahabitacion import NuevaHabitacion
 from models.huesped import Huesped
+from models.nuevamesa import NuevaMesa
+from models.nuevoplato import NuevoPlato
 
 main_bp = Blueprint('main', __name__)
 
@@ -95,9 +97,11 @@ def estadisticas_admin():
     return redirect(url_for('estadisticasgenerales.dashboard'))
 
 
-@main_bp.route('/restaurante_admin')
+@main_bp.route('/admin/restaurante')
 def restaurante_admin():
-    return render_template('dashboard/restaurante_admin.html')
+    platos = NuevoPlato.query.all()
+    mesas = NuevaMesa.query.all()
+    return render_template('dashboard/restaurante_admin.html', platos=platos, mesas=mesas)
 
 @main_bp.route('/experiencias_admin')
 def experiencias_admin():

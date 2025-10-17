@@ -1,88 +1,145 @@
-{% extends 'home/base.html' %}
-
-{% block title %}Restaurante - Admin{% endblock %}
-
+{% extends 'dashboard/base.html' %}
 {% block content %}
+<br><br>
+
 <div class="container mt-5">
 
-    <!-- Encabezado -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Restaurante - Administración</h2>
+  <!-- 🔹 Encabezado con botones -->
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+
+    <!-- 🔸 Botones principales -->
+    <div class="d-flex gap-2 flex-wrap">
+      <button class="btn btn-primary shadow-sm rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modalPlato">
+        + Añadir Plato
+      </button>
+      <button class="btn btn-success shadow-sm rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modalMesa">
+        + Añadir Mesa
+      </button>
     </div>
 
-    <!-- Tabla de platos -->
-    <h4>📋 Platos registrados</h4>
-    <table class="table mt-3">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Plato</th>
-                <th>Categoria</th>
-                <th>Precio</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for p in platos %}
-            <tr>
-                <td>{{ p.id }}</td>
-                <td>{{ p.nombre }}</td>
-                <td>{{ p.categoria }}</td>
-                <td>${{ '%.2f'|format(p.precio) }}</td>
-                <td class="text-end">
-                    <a href="{{ url_for('admin_restaurante_editar', plato_id=p.id) }}" class="btn btn-sm btn-primary me-2">Editar</a>
-                    <form method="POST" action="{{ url_for('admin_restaurante_eliminar', plato_id=p.id) }}" style="display:inline-block;">
-                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este plato?');">Eliminar</button>
-                    </form>
-                </td>
-            </tr>
-        {% else %}
-            <tr><td colspan="5" class="text-center">No hay platos registrados.</td></tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    <!-- 🔸 Navegación -->
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{{ url_for('reservas.reservas_admin') }}" class="btn btn-secondary shadow-sm rounded-pill px-3">
+        📋 Reservas
+      </a>
+      <a href="{{ url_for('main.restaurante_admin') }}" class="btn btn-dark shadow-sm rounded-pill px-3">
+        🍴 Restaurante
+      </a>
+    </div>
+  </div>
 
-    <hr class="my-4">
+  <!-- 🔹 Sección de Platos -->
+  <h4 class="mt-4 mb-3">🍛 Platos</h4>
+  <div class="row">
+    {% for p in platos %}
+    <div class="col-md-4 mb-4">
+      <div class="card shadow-sm rounded-4 overflow-hidden">
+        <img src="{{ p.imagen or '/static/img/default.png' }}"
+             class="card-img-top"
+             alt="{{ p.nombre }}"
+             style="height: 200px; object-fit: cover;">
+        <div class="card-body text-center">
+          <h5 class="fw-bold">{{ p.nombre }}</h5>
+          <p class="text-muted">{{ p.categoria }}</p>
+          <p><strong>${{ "{:,.0f}".format(p.precio|float) }}</strong></p>
 
-    <!-- Formulario Nuevo Plato -->
-    <h4>➕ Crear nuevo plato</h4>
-    <form method="POST" action="{{ url_for('admin_restaurante_nuevo') }}" class="mt-3">
-        <div class="mb-3">
-            <label class="form-label">Nombre</label>
-            <input class="form-control" name="nombre" required>
+          <div class="d-flex justify-content-between mt-3 px-3">
+            <a href="#" class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-info-circle"></i> Especificaciones
+            </a>
+            <div>
+              <a href="#" class="btn btn-sm btn-warning">
+                <i class="bi bi-pencil-square"></i>
+              </a>
+              <a href="#" class="btn btn-sm btn-danger">
+                <i class="bi bi-trash"></i>
+              </a>
+            </div>
+          </div>
         </div>
-        <div class="mb-3">
-            <label class="form-label">Categoria</label>
-            <input class="form-control" name="categoria">
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Precio</label>
-            <input class="form-control" name="precio" type="number" required>
-        </div>
-        <button class="btn btn-success" type="submit">Crear</button>
-    </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
 
-    <hr class="my-4">
-
-    <!-- Formulario Editar Plato -->
-    {% if plato %}
-    <h4>✏️ Editar plato</h4>
-    <form method="POST" action="{{ url_for('admin_restaurante_editar', plato_id=plato.id) }}" class="mt-3">
-        <div class="mb-3">
-            <label class="form-label">Nombre</label>
-            <input class="form-control" name="nombre" value="{{ plato.nombre }}" required>
+  <!-- 🔹 Sección de Mesas -->
+  <h4 class="mt-4 mb-3">🪑 Mesas</h4>
+  <div class="row">
+    {% for m in mesas %}
+    <div class="col-md-3 mb-4">
+      <div class="card text-center shadow-sm rounded-4">
+        <div class="card-body">
+          <h6 class="fw-bold">Mesa {{ m.numeroMesa }}</h6>
+          <p>Capacidad: {{ m.capacidad }}</p>
+          <p class="badge {{ 'bg-success' if m.disponible else 'bg-danger' }}">
+            {{ 'Disponible' if m.disponible else 'Ocupada' }}
+          </p>
         </div>
-        <div class="mb-3">
-            <label class="form-label">Categoria</label>
-            <input class="form-control" name="categoria" value="{{ plato.categoria }}">
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Precio</label>
-            <input class="form-control" name="precio" type="number" value="{{ plato.precio }}" required>
-        </div>
-        <button class="btn btn-primary" type="submit">Guardar</button>
-    </form>
-    {% endif %}
-
+      </div>
+    </div>
+    {% endfor %}
+  </div>
 </div>
+
+<!-- 🔸 Modal Nuevo Plato -->
+<div class="modal fade" id="modalPlato" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content"
+          method="POST"
+          action="{{ url_for('nuevoplato.nuevo_plato') }}"
+          enctype="multipart/form-data">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Nuevo Plato</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <input class="form-control mb-2" name="nombre" placeholder="Nombre del plato" required>
+        <textarea class="form-control mb-2" name="descripcion" placeholder="Descripción"></textarea>
+        <input class="form-control mb-2" name="precio" type="number" placeholder="Precio" required>
+        
+        <select class="form-select mb-2" name="categoria" required>
+          <option value="" disabled selected>Seleccione categoría</option>
+          <option>Desayuno</option>
+          <option>Almuerzo</option>
+          <option>Cena</option>
+        </select>
+
+        <label class="form-label">Imagen del plato</label>
+        <input class="form-control" type="file" name="imagen" accept="image/*">
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-primary" type="submit">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 🔸 Modal Nueva Mesa -->
+<div class="modal fade" id="modalMesa" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content"
+          method="POST"
+          action="{{ url_for('nuevamesa.nueva_mesa') }}">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Nueva Mesa</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <input class="form-control mb-2" name="numeroMesa" placeholder="Número de mesa" required>
+        <input class="form-control mb-2" name="capacidad" type="number" placeholder="Capacidad" required>
+        <input class="form-control" name="ubicacion" placeholder="Ubicación (opcional)">
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-success" type="submit">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 {% endblock %}

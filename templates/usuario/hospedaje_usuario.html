@@ -93,7 +93,7 @@
         </div>
       </div>
 
-      <!-- Modal Reserva -->
+      <!-- FORMULARIO RESERVA -->
       <div class="modal fade" id="formReserva{{ h.id }}" tabindex="-1"
            aria-labelledby="formReservaLabel{{ h.id }}" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -102,33 +102,41 @@
               <h5 class="modal-title" id="formReservaLabel{{ h.id }}">Reservar {{ h.nombre }}</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
+
             <div class="modal-body">
               <form method="POST" action="{{ url_for('habitacionHuesped.reservar_habitacion') }}">
                 <input type="hidden" name="habitacion_id" value="{{ h.id }}">
+
                 <div class="mb-3">
                   <label class="form-label">Nombre habitación</label>
                   <input type="text" class="form-control" name="nombre" value="{{ h.nombre }}" readonly>
                 </div>
+
                 <div class="mb-3">
                   <label class="form-label">Precio</label>
                   <input type="text" class="form-control" name="precio" value="{{ h.precio }}" readonly>
                 </div>
+
                 <div class="mb-3">
                   <label class="form-label">Cantidad de Personas</label>
                   <input type="number" class="form-control" name="cantidad_personas"
                          min="1" max="{{ h.cupo_personas }}"
-                         placeholder="Máximo {{ h.cupo_personas }}" required>
+                         placeholder="Máximo {{ h.cupo_personas }}"
+                         required>
                 </div>
+
                 <div class="mb-3">
-                  <label class="form-label">Check-in</label>
+                  <label class="form-label">Check-in (Hoy)</label>
                   <input type="date" class="form-control" name="check_in"
                          value="{{ current_date }}" readonly>
                 </div>
+
                 <div class="mb-3">
                   <label class="form-label">Check-out</label>
                   <input type="date" class="form-control" name="check_out"
                          min="{{ current_date }}" required>
                 </div>
+
                 <div class="text-end">
                   <button type="submit" class="btn btn-success">Confirmar Reserva</button>
                 </div>
@@ -138,8 +146,101 @@
         </div>
       </div>
 
+      <!-- FORMULARIO DATOS PERSONALES -->
+      <div class="modal fade" id="formDatosPersonales{{ h.id }}" tabindex="-1"
+           aria-labelledby="formDatosPersonalesLabel{{ h.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="formDatosPersonalesLabel{{ h.id }}">Datos Personales</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+              <form method="POST" action="{{ url_for('huesped.guardar_huesped') }}">
+                <input type="hidden" name="habitacion_id" value="{{ h.id }}">
+
+                <div class="mb-3">
+                  <label class="form-label">Habitación</label>
+                  <input type="text" class="form-control" name="habitacion_nombre"
+                         value="{{ h.nombre }}" readonly>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Nombre</label>
+                  <input type="text" class="form-control" name="nombre" required>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Tipo de Documento</label>
+                  <select class="form-select" name="tipoDocumento" required>
+                    <option value="" selected disabled>Seleccione una opción</option>
+                    <option value="Cédula de Ciudadanía">Cédula de Ciudadanía</option>
+                    <option value="Tarjeta de Identidad">Tarjeta de Identidad</option>
+                    <option value="Cédula de Extranjería">Cédula de Extranjería</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Número Documento</label>
+                  <input type="text" class="form-control" name="numeroDocumento" required>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Procedencia</label>
+                  <input type="text" class="form-control" name="procedencia" required>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Teléfono</label>
+                  <input type="text" class="form-control" name="telefono" required>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Correo</label>
+                  <input type="email" class="form-control" name="correo" required>
+                </div>
+
+                <div class="text-end">
+                  <button type="submit" class="btn btn-primary">Guardar Datos</button>
+                </div>
+
+                <input type="hidden" name="precio" value="{{ h.precio }}">
+                <input type="hidden" name="cantidad_personas" value="{{ h.cupo_personas }}">
+                <input type="hidden" name="check_in" value="{{ current_date }}">
+                <input type="hidden" name="check_out" value="{{ current_date }}">
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
     {% endfor %}
   </div>
 </div>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const habitacionId = "{{ habitacion_id or '' }}";
+  const abrir = "{{ abrir or '' }}";
+
+  if (habitacionId) {
+    let modalId = '';
+
+    if (abrir === 'reserva') {
+      modalId = `formReserva${habitacionId}`;
+    } else if (abrir === 'datos') {
+      modalId = `formDatosPersonales${habitacionId}`;
+    }
+
+    const modalElement = document.getElementById(modalId);
+    if (modalElement) {
+      const modal = new bootstrap.Modal(modalElement);
+      modal.show();
+    }
+  }
+});
+</script>
 
 {% endblock %}

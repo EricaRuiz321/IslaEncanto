@@ -98,17 +98,24 @@ from routes.usuario.habitacionhuesped_routes import habitacionHuesped_bp
 from routes.usuario.huesped_routes import huesped_bp
 from routes.usuario.perfil_usuario_routes import perfil_usuario_bp
 from routes.dashboard.estadisticasgenerales_routes import estadisticasgenerales_bp
-
+from routes.dashboard.reservarmenu_routes import reservas_bp
+from routes.dashboard.nuevoplato_routes import nuevoplato_bp
+from routes.dashboard.nuevamesa_routes import nuevamesa_bp
+from routes.usuario.restaurante_routes import usuario_restaurante
 
 app.register_blueprint(registro_bp, url_prefix='/registro')
+app.register_blueprint(habitacionHuesped_bp)
 app.register_blueprint(main_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(admin_bp, url_prefix='/admin')  # ✅ Registrar blueprint admin
 app.register_blueprint(recuperar_bp, url_prefix='/recuperar')
-app.register_blueprint(habitacionHuesped_bp)
 app.register_blueprint(huesped_bp)
 app.register_blueprint(perfil_usuario_bp, url_prefix='/perfil')
 app.register_blueprint(estadisticasgenerales_bp, url_prefix="/admin")
+app.register_blueprint(reservas_bp)
+app.register_blueprint(nuevoplato_bp)
+app.register_blueprint(nuevamesa_bp)
+app.register_blueprint(usuario_restaurante)
 
 
 # ------------------- Aliases de Rutas (compatibilidad con plantillas) -------------------

@@ -4,20 +4,22 @@ from models.nuevahabitacion import NuevaHabitacion
 from utils.extensions import db
 from datetime import date
 
-habitacionHuesped_bp = Blueprint('habitacionHuesped', __name__)
+habitacionHuesped_bp = Blueprint('habitacionHuesped', __name__, url_prefix='/habitacionHuesped')
 
 @habitacionHuesped_bp.route('/hospedaje_usuario')
 def hospedaje_usuario():
     print("hospedaje usuario ------------")
     habitaciones = NuevaHabitacion.query.all()
-    habitacion_id = request.args.get("habitacion_id")  # <-- detecta si se acaba de reservar
+    habitacion_id = request.args.get("habitacion_id")
+    abrir = request.args.get("abrir")  # 🔥 nuevo parámetro
+
     return render_template(
         'usuario/hospedaje_usuario.html',
         habitaciones=habitaciones,
         current_date=date.today().strftime("%Y-%m-%d"),
-        habitacion_id=habitacion_id
+        habitacion_id=habitacion_id,
+        abrir=abrir  # 🔥 pasar al template
     )
-
 
 
 @habitacionHuesped_bp.route('/reservar_habitacion', methods=['POST'])
@@ -47,9 +49,10 @@ def reservar_habitacion():
         habitacion.estado = "Ocupada"
 
     db.session.commit()
-
+    print("Reserva guardada --- antes del redirect")
     # Redirigir al formulario de huésped pasándole la habitación
-    return redirect(url_for('habitacionHuesped.hospedaje_usuario', habitacion_id=habitacion_id))
+    return redirect(url_for('habitacionHuesped.hospedaje_usuario', habitacion_id=habitacion_id, abrir='datos'))
+
 
 @habitacionHuesped_bp.route('/liberar_habitacion/<int:habitacion_id>', methods=['POST'])
 def liberar_habitacion(habitacion_id):
@@ -66,12 +69,14 @@ def liberar_habitacion(habitacion_id):
 
 @habitacionHuesped_bp.route('/nuevo_huesped')
 def nuevo_huesped():
-    # Tomar la primera habitación disponible
+    # Buscar la primera habitación disponible
+    from models.nuevahabitacion import NuevaHabitacion
     habitacion = NuevaHabitacion.query.filter_by(estado="Disponible").first()
 
     if habitacion:
-        # Redirigir al hospedaje_usuario con el ID y una marca para abrir el modal de reserva
-        return redirect(url_for('main.hospedaje_usuario', habitacion_id=habitacion.id, abrir='reserva'))
+        # 🔥 Redirección forzada y 100% funcional
+        return redirect(url_for('habitacionHuesped.hospedaje_usuario', habitacion_id=habitacion.id, abrir='reserva'))
     else:
-        # Si no hay disponibles, solo abrir la vista
-        return redirect(url_for('main.hospedaje_usuario'))
+        return redirect("/habitacionHuesped/hospedaje_usuario")
+
+

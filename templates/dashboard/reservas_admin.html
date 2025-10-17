@@ -1,0 +1,64 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<br><br>
+<div class="container mt-5">
+
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+    <!-- 🔸 Derecha: navegación del panel -->
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{{ url_for('reservas.reservas_admin') }}" class="btn btn-secondary shadow-sm rounded-pill px-3">
+        📋 Reservas
+      </a>
+      <a href="{{ url_for('main.restaurante_admin') }}" class="btn btn-dark shadow-sm rounded-pill px-3">
+        🍴 Restaurante
+      </a>
+    </div>
+  </div>
+
+  <div class="row">
+    {% for r in reservas %}
+    <div class="col-md-4 mb-4">
+      <div class="card shadow-sm rounded-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span class="fw-bold">🪑 Mesa {{ r.mesa.numeroMesa }}</span>
+          <span class="badge {{ 'bg-success' if r.estado == 'Activa' else 'bg-danger' }}">
+            {{ r.estado }}
+          </span>
+        </div>
+        <div class="card-body text-center">
+          <h5>{{ r.nombreCliente }}</h5>
+          <p>📞 {{ r.telefono }}</p>
+          <button class="btn btn-outline-primary btn-sm mb-2" data-bs-toggle="modal" data-bs-target="#modalDetalles{{ r.idReserva }}">
+            Especificaciones
+          </button>
+          <form method="POST" action="{{ url_for('reservas_admin.liberar_mesa', id=r.idReserva) }}">
+            <button class="btn btn-danger btn-sm w-100">🔑 Liberar Mesa</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Especificaciones -->
+    <div class="modal fade" id="modalDetalles{{ r.idReserva }}" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Detalles de la Reserva</h5>
+            <button class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p><strong>Cliente:</strong> {{ r.nombreCliente }}</p>
+            <p><strong>Teléfono:</strong> {{ r.telefono }}</p>
+            <p><strong>Documento:</strong> {{ r.numeroDocumento }}</p>
+            <p><strong>Fecha:</strong> {{ r.fecha }}</p>
+            <p><strong>Hora:</strong> {{ r.hora }}</p>
+            <p><strong>Mesa:</strong> {{ r.mesa.numeroMesa }}</p>
+            <p><strong>Plato:</strong> {{ r.plato.nombre }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
