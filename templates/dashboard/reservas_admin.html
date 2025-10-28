@@ -3,62 +3,204 @@
 <br><br>
 <div class="container mt-5">
 
-  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
-    <!-- 🔸 Derecha: navegación del panel -->
-    <div class="d-flex gap-2 flex-wrap">
-      <a href="{{ url_for('reservas.reservas_admin') }}" class="btn btn-secondary shadow-sm rounded-pill px-3">
-        📋 Reservas
-      </a>
-      <a href="{{ url_for('main.restaurante_admin') }}" class="btn btn-dark shadow-sm rounded-pill px-3">
-        🍴 Restaurante
-      </a>
+  <!-- Header con botones para navegar entre Reservas y Restaurante -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <!-- Botón: añadir mesa a la izquierda -->
+      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearMesa">+ Añadir mesa</button>
+    </div>
+    <div class="d-flex gap-2">
+      <!-- Botones de navegación a la derecha: Reservas (azul) y Restaurante (verde) -->
+      <a href="{{ url_for('reservas.reservas_admin') }}" class="btn btn-primary" onclick="window.location='{{ url_for('reservas.reservas_admin') }}'">Reservas</a>
+      <a href="{{ url_for('main.restaurante_admin') }}" class="btn btn-success" onclick="window.location='{{ url_for('main.restaurante_admin') }}'">Restaurante</a>
     </div>
   </div>
 
+  <!-- Listado de mesas (número grande, estado, cliente, editar cliente, liberar, especificaciones, editar/elim mesa) -->
   <div class="row">
-    {% for r in reservas %}
-    <div class="col-md-4 mb-4">
-      <div class="card shadow-sm rounded-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span class="fw-bold">🪑 Mesa {{ r.mesa.numeroMesa }}</span>
-          <span class="badge {{ 'bg-success' if r.estado == 'Activa' else 'bg-danger' }}">
-            {{ r.estado }}
-          </span>
+    {% for m in mesas %}
+    <div class="col-md-3 mb-4">
+      <div class="card p-3 text-center shadow-sm">
+        <div style="font-size:2.5rem; font-weight:800;">{{ m.numeroMesa }}</div>
+        <div class="mt-2">
+          <small>Capacidad: {{ m.capacidad }}</small>
+          <p class="mt-2">
+            {% if m.disponible %}
+              <span class="badge bg-success">Disponible</span>
+            {% else %}
+              <span class="badge bg-warning">Reservada</span>
+            {% endif %}
+          </p>
+
+          {% if m.reservas and m.reservas|length > 0 %}
+            {% set r = m.reservas|last %}
+            <div class="mt-2">
+              <strong>{{ r.nombreCliente }}</strong><br>
+              <small>{{ r.telefono }}</small>
+            </div>
+          {% else %}
+            <div class="mt-2 text-muted">Sin reserva</div>
+          {% endif %}
+
+          <div class="mt-3 d-flex flex-column gap-2">
+            {% if not m.disponible %}
+              <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditarCliente{{ m.idMesa }}">Editar cliente</button>
+              <form method="POST" action="{{ url_for('reservas.liberar_mesa', mesa_id=m.idMesa) }}">
+                <button type="submit" class="btn btn-danger btn-sm">Liberar mesa</button>
+              </form>
+              <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalDetalles{{ m.idMesa }}">Especificaciones</button>
+            {% else %}
+              <!-- Reservar button intentionally hidden per request -->
+            {% endif %}
+
+            <div class="d-flex gap-1 justify-content-center mt-2">
+              <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#modalEditarMesa{{ m.idMesa }}">Editar mesa</button>
+              <form method="POST" action="{{ url_for('nuevamesa.eliminar_mesa', mesa_id=m.idMesa) }}" style="display:inline;">
+                <button class="btn btn-sm btn-danger">Eliminar</button>
+              </form>
+            </div>
+          </div>
         </div>
-        <div class="card-body text-center">
-          <h5>{{ r.nombreCliente }}</h5>
-          <p>📞 {{ r.telefono }}</p>
-          <button class="btn btn-outline-primary btn-sm mb-2" data-bs-toggle="modal" data-bs-target="#modalDetalles{{ r.idReserva }}">
-            Especificaciones
-          </button>
-          <form method="POST" action="{{ url_for('reservas_admin.liberar_mesa', id=r.idReserva) }}">
-            <button class="btn btn-danger btn-sm w-100">🔑 Liberar Mesa</button>
+      </div>
+    </div>
+
+    <!-- Modal reservar mesa -->
+    <div class="modal fade" id="modalReservarMesa{{ m.idMesa }}" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <form method="POST" action="{{ url_for('reservas.reservar_mesa', mesa_id=m.idMesa) }}">
+            <div class="modal-header"><h5>Reservar mesa {{ m.numeroMesa }}</h5></div>
+            <div class="modal-body">
+              <input class="form-control mb-2" name="nombreCliente" placeholder="Nombre" required>
+              <input class="form-control mb-2" name="telefono" placeholder="Teléfono">
+              <textarea class="form-control mb-2" name="detalles" placeholder="Detalles"></textarea>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button class="btn btn-primary" type="submit">Reservar</button>
+            </div>
           </form>
         </div>
       </div>
     </div>
 
-    <!-- Modal Especificaciones -->
-    <div class="modal fade" id="modalDetalles{{ r.idReserva }}" tabindex="-1">
+    <!-- Modal editar cliente -->
+    <div class="modal fade" id="modalEditarCliente{{ m.idMesa }}" tabindex="-1">
       <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Detalles de la Reserva</h5>
-            <button class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
+        <form class="modal-content" method="POST" action="{{ url_for('reservas.editar_reserva_cliente', mesa_id=m.idMesa) }}">
+          <div class="modal-header"><h5>Editar cliente — Mesa {{ m.numeroMesa }}</h5></div>
           <div class="modal-body">
-            <p><strong>Cliente:</strong> {{ r.nombreCliente }}</p>
-            <p><strong>Teléfono:</strong> {{ r.telefono }}</p>
-            <p><strong>Documento:</strong> {{ r.numeroDocumento }}</p>
-            <p><strong>Fecha:</strong> {{ r.fecha }}</p>
-            <p><strong>Hora:</strong> {{ r.hora }}</p>
-            <p><strong>Mesa:</strong> {{ r.mesa.numeroMesa }}</p>
-            <p><strong>Plato:</strong> {{ r.plato.nombre }}</p>
+            {% if m.reservas and m.reservas|length > 0 %}
+              {% set r = m.reservas|last %}
+              <div class="mb-2">
+                <label class="form-label">Nombre</label>
+                <input class="form-control" name="nombreCliente" value="{{ r.nombreCliente }}" required>
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Teléfono</label>
+                <input class="form-control" name="telefono" value="{{ r.telefono }}">
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Número de documento</label>
+                <input class="form-control" name="numeroDocumento" value="{{ r.numeroDocumento or '' }}">
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Plato</label>
+                <select class="form-select" name="idPlato">
+                  <option value="">-- Sin cambio --</option>
+                  {% for p in platos %}
+                    <option value="{{ p.idPlato }}" {% if r.idPlato == p.idPlato %}selected{% endif %}>{{ p.categoria }} - {{ p.nombre }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="row g-2">
+                <div class="col-md-6">
+                  <label class="form-label">Fecha</label>
+                  <input type="date" class="form-control" name="fecha" value="{{ r.fecha }}">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Hora</label>
+                  <input type="time" class="form-control" name="hora" value="{{ r.hora }}">
+                </div>
+              </div>
+              <div class="mb-2 mt-2">
+                <label class="form-label">Estado</label>
+                <select class="form-select" name="estado">
+                  <option value="Activa" {% if r.estado == 'Activa' %}selected{% endif %}>Activa</option>
+                  <option value="Finalizada" {% if r.estado == 'Finalizada' %}selected{% endif %}>Finalizada</option>
+                  <option value="Cancelada" {% if r.estado == 'Cancelada' %}selected{% endif %}>Cancelada</option>
+                </select>
+              </div>
+            {% else %}
+              <p>No hay reserva activa.</p>
+            {% endif %}
           </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            <button class="btn btn-primary" type="submit">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal detalles -->
+    <div class="modal fade" id="modalDetalles{{ m.idMesa }}" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content p-3">
+          <h5>Detalles mesa {{ m.numeroMesa }}</h5>
+          {% for r in m.reservas %}
+            <div class="mb-2">
+              <p><strong>{{ r.nombreCliente }}</strong> — {{ r.telefono }}</p>
+              <p><small>{{ r.fecha }} {{ r.hora }}</small></p>
+              <p><small>Plato: {{ r.plato.nombre if r.plato else 'N/A' }}</small></p>
+              <hr>
+            </div>
+          {% endfor %}
         </div>
       </div>
     </div>
+
+    <!-- Modal editar mesa -->
+    <div class="modal fade" id="modalEditarMesa{{ m.idMesa }}" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" method="POST" action="{{ url_for('nuevamesa.editar_mesa', mesa_id=m.idMesa) }}">
+          <div class="modal-header"><h5>Editar mesa {{ m.numeroMesa }}</h5></div>
+          <div class="modal-body">
+            <label class="form-label">Número de mesa</label>
+            <input class="form-control mb-2" name="numeroMesa" value="{{ m.numeroMesa }}" required>
+            <label class="form-label">Capacidad</label>
+            <input class="form-control mb-2" name="capacidad" type="number" value="{{ m.capacidad }}" required>
+            <label class="form-label">Ubicación</label>
+            <input class="form-control" name="ubicacion" value="{{ m.ubicacion or '' }}">
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button class="btn btn-warning" type="submit">Guardar cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     {% endfor %}
   </div>
 </div>
+
+<!-- Modal crear mesa -->
+<div class="modal fade" id="modalCrearMesa" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content" method="POST" action="{{ url_for('nuevamesa.nueva_mesa') }}">
+      <div class="modal-header"><h5>Nueva Mesa</h5></div>
+      <div class="modal-body">
+        <input class="form-control mb-2" name="numeroMesa" placeholder="Numero" required>
+        <input class="form-control mb-2" name="capacidad" type="number" placeholder="Capacidad" required>
+        <input class="form-control" name="ubicacion" placeholder="Ubicación">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-success" type="submit">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 {% endblock %}

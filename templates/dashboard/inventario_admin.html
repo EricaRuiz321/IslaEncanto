@@ -1,0 +1,467 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Inventario - Isla Encanto{% endblock %}
+
+{% block content %}
+<br>
+<br>
+<br>
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-clipboard-list"></i> Gestión de Inventario</h2>
+        <div class="d-flex gap-2">
+          <button onclick="descargarInventarioCompleto()" class="btn btn-success">
+            <i class="fas fa-download"></i> Descargar Inventario Completo
+          </button>
+          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalGestionarObjetos">
+            <i class="fas fa-plus"></i> Gestionar Objetos
+          </button>
+          <span class="badge bg-info fs-6">{{ fecha_hoy.strftime('%d/%m/%Y') }}</span>
+        </div>
+      </div>
+
+      <!-- Resumen del día -->
+      <div class="row mb-4">
+        <div class="col-md-3">
+          <div class="card bg-primary text-white">
+            <div class="card-body">
+              <div class="d-flex justify-content-between">
+                <div>
+                  <h6 class="card-title">Total Habitaciones</h6>
+                  <h3>{{ estadisticas_inventario.total_habitaciones_con_objetos }}</h3>
+                </div>
+                <i class="fas fa-bed fa-2x opacity-75"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-success text-white">
+            <div class="card-body">
+              <div class="d-flex justify-content-between">
+                <div>
+                  <h6 class="card-title">Completas</h6>
+                  <h3>{{ estadisticas_inventario.habitaciones_completas }}</h3>
+                </div>
+                <i class="fas fa-check-circle fa-2x opacity-75"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-danger text-white">
+            <div class="card-body">
+              <div class="d-flex justify-content-between">
+                <div>
+                  <h6 class="card-title">Faltantes</h6>
+                  <h3>{{ estadisticas_inventario.habitaciones_faltantes }}</h3>
+                </div>
+                <i class="fas fa-exclamation-triangle fa-2x opacity-75"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-warning text-white">
+            <div class="card-body">
+              <div class="d-flex justify-content-between">
+                <div>
+                  <h6 class="card-title">Pendientes</h6>
+                  <h3>{{ estadisticas_inventario.habitaciones_pendientes }}</h3>
+                </div>
+                <i class="fas fa-clock fa-2x opacity-75"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progreso general -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5>Progreso del Inventario Hoy</h5>
+          <div class="progress mb-2" style="height: 25px;">
+            <div class="progress-bar bg-success" role="progressbar" 
+                 id="progresoInventario"
+                 data-porcentaje="{{ estadisticas_inventario.porcentaje_progreso }}">
+              {{ "%.1f".format(estadisticas_inventario.porcentaje_progreso) }}%
+            </div>
+          </div>
+          <small class="text-muted">
+            {{ estadisticas_inventario.habitaciones_completas }} de {{ estadisticas_inventario.total_habitaciones_con_objetos }} habitaciones completadas
+          </small>
+        </div>
+      </div>
+
+      <!-- Lista de habitaciones -->
+      <div class="row">
+        {% for habitacion in habitaciones %}
+        <div class="col-md-4 mb-3">
+          <div class="card h-100 inventario-{{ habitacion.estado_inventario|default('sin_inventario') }}" 
+               style="border-width: 3px;">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h6 class="mb-0">{{ habitacion.nombre }}</h6>
+              <div class="d-flex gap-2 align-items-center">
+                <span class="badge bg-{{ 'success' if habitacion.estado == 'Disponible' else 'warning' }}">
+                  {{ habitacion.estado }}
+                </span>
+                <!-- Badge del estado de inventario -->
+                {% if not habitacion.inventario_realizado %}
+                  <span class="badge bg-secondary">⏳ Pendiente</span>
+                {% elif habitacion.estado_inventario == 'completo' %}
+                  <span class="badge bg-success">✓ Completo</span>
+                {% elif habitacion.estado_inventario == 'faltante' %}
+                  <span class="badge bg-danger">⚠ Faltante</span>
+                {% elif habitacion.estado_inventario == 'parcial' %}
+                  <span class="badge bg-warning">⚡ Parcial</span>
+                {% elif habitacion.estado_inventario == 'sin_objetos' %}
+                  <span class="badge bg-info">📋 Sin objetos</span>
+                {% else %}
+                  <span class="badge bg-secondary">⏳ Pendiente</span>
+                {% endif %}
+              </div>
+            </div>
+            <div class="card-body">
+              <p class="card-text text-muted mb-2">{{ habitacion.descripcion[:80] }}...</p>
+              
+              {% if habitacion.objetos_incluidos %}
+                <div class="mb-3">
+                  <small class="text-muted">Objetos incluidos:</small>
+                  <div class="d-flex flex-wrap gap-1 mt-1">
+                    {% for objeto in habitacion.objetos_incluidos.split(',') %}
+                      {% if objeto.strip() %}
+                      <span class="badge bg-light text-dark">{{ objeto.strip() }}</span>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+              {% else %}
+                <p class="text-muted"><em>Sin objetos definidos</em></p>
+              {% endif %}
+              
+              <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">
+                  <i class="fas fa-users"></i> {{ habitacion.cupo_personas }} personas
+                </small>
+                <small class="text-muted">
+                  ${{ "{:,.0f}".format(habitacion.precio or 0) }}
+                </small>
+              </div>
+            </div>
+            <div class="card-footer">
+              {% if not habitacion.inventario_realizado %}
+                <!-- Mostrar botón para realizar inventario -->
+                <a href="{{ url_for('inventario.inventario_habitacion', habitacion_id=habitacion.id) }}" 
+                   class="btn btn-primary btn-sm w-100">
+                  <i class="fas fa-clipboard-check"></i> Realizar Inventario
+                </a>
+              {% else %}
+                <!-- Mostrar botones para ver y editar inventario -->
+                <div class="d-flex gap-2">
+                  <a href="{{ url_for('inventario.ver_inventario_habitacion', habitacion_id=habitacion.id) }}" 
+                     class="btn btn-outline-primary btn-sm flex-fill">
+                    <i class="fas fa-eye"></i> Ver Inventario
+                  </a>
+                  <a href="{{ url_for('inventario.inventario_habitacion', habitacion_id=habitacion.id) }}" 
+                     class="btn btn-warning btn-sm flex-fill">
+                    <i class="fas fa-edit"></i> Editar
+                  </a>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Gestionar Objetos -->
+<div class="modal fade" id="modalGestionarObjetos" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-cogs"></i> Gestionar Objetos de Inventario</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Formulario para nuevo objeto -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h6><i class="fas fa-plus"></i> Añadir Nuevo Objeto</h6>
+          </div>
+          <div class="card-body">
+            <form action="{{ url_for('inventario.crear_objeto') }}" method="POST">
+              <div class="row">
+                <div class="col-md-4">
+                  <label class="form-label">Nombre del Objeto</label>
+                  <input type="text" class="form-control" name="nombre" required 
+                         placeholder="Ej: Secador de pelo">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Categoría</label>
+                  <select class="form-select" name="categoria">
+                    <option value="amenidades">Amenidades</option>
+                    <option value="electrodomesticos">Electrodomésticos</option>
+                    <option value="mobiliario">Mobiliario</option>
+                    <option value="textiles">Textiles</option>
+                    <option value="seguridad">Seguridad</option>
+                    <option value="limpieza">Limpieza</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Descripción</label>
+                  <input type="text" class="form-control" name="descripcion" 
+                         placeholder="Opcional">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                  <button type="submit" class="btn btn-success w-100">
+                    <i class="fas fa-plus"></i> Añadir
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Lista de objetos existentes -->
+        <div class="card">
+          <div class="card-header">
+            <h6><i class="fas fa-list"></i> Objetos Disponibles</h6>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Categoría</th>
+                    <th>Descripción</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for objeto in objetos_disponibles %}
+                  <tr>
+                    <td><strong>{{ objeto.nombre }}</strong></td>
+                    <td>
+                      <span class="badge bg-secondary">{{ objeto.categoria or 'Sin categoría' }}</span>
+                    </td>
+                    <td>{{ objeto.descripcion or '-' }}</td>
+                    <td>
+                      <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-primary" 
+                                data-objeto-id="{{ objeto.id }}" 
+                                data-objeto-nombre="{{ objeto.nombre }}" 
+                                data-objeto-categoria="{{ objeto.categoria }}" 
+                                data-objeto-descripcion="{{ objeto.descripcion or '' }}"
+                                onclick="editarObjetoFromData(this)">
+                          <i class="fas fa-edit"></i>
+                        </button>
+                        <form method="POST" action="{{ url_for('inventario.eliminar_objeto', objeto_id=objeto.id) }}" 
+                              style="display: inline;" 
+                              onsubmit="return confirm('¿Seguro que deseas desactivar este objeto?')">
+                          <button type="submit" class="btn btn-outline-danger">
+                            <i class="fas fa-trash"></i>
+                          </button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Objeto -->
+<div class="modal fade" id="modalEditarObjeto" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Objeto</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="formEditarObjeto" method="POST">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Nombre</label>
+            <input type="text" class="form-control" name="nombre" id="editNombre" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Categoría</label>
+            <select class="form-select" name="categoria" id="editCategoria">
+              <option value="amenidades">Amenidades</option>
+              <option value="electrodomesticos">Electrodomésticos</option>
+              <option value="mobiliario">Mobiliario</option>
+              <option value="textiles">Textiles</option>
+              <option value="seguridad">Seguridad</option>
+              <option value="limpieza">Limpieza</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Descripción</label>
+            <input type="text" class="form-control" name="descripcion" id="editDescripcion">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Estilos para los bordes de las tarjetas de inventario */
+.inventario-completo {
+    border-color: #28a745 !important; /* Verde - Completo */
+    box-shadow: 0 0 0 1px rgba(40, 167, 69, 0.2);
+}
+
+.inventario-faltante {
+    border-color: #dc3545 !important; /* Rojo - Faltante */
+    box-shadow: 0 0 0 1px rgba(220, 53, 69, 0.2);
+}
+
+.inventario-parcial {
+    border-color: #fd7e14 !important; /* Naranja - Parcial */
+    box-shadow: 0 0 0 1px rgba(253, 126, 20, 0.2);
+}
+
+.inventario-sin_inventario {
+    border-color: #ffc107 !important; /* Amarillo - Sin inventario realizado */
+    box-shadow: 0 0 0 1px rgba(255, 193, 7, 0.2);
+}
+
+.inventario-sin_objetos {
+    border-color: #17a2b8 !important; /* Azul info - Sin objetos */
+    box-shadow: 0 0 0 1px rgba(23, 162, 184, 0.2);
+}
+
+/* Hover effects */
+.inventario-completo:hover {
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+.inventario-faltante:hover {
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+.inventario-parcial:hover {
+    box-shadow: 0 4px 8px rgba(253, 126, 20, 0.3);
+}
+
+.inventario-sin_inventario:hover {
+    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);
+}
+
+.inventario-sin_objetos:hover {
+    box-shadow: 0 4px 8px rgba(23, 162, 184, 0.3);
+}
+</style>
+
+<script>
+function editarObjeto(id, nombre, categoria, descripcion) {
+    document.getElementById('editNombre').value = nombre;
+    document.getElementById('editCategoria').value = categoria;
+    document.getElementById('editDescripcion').value = descripcion;
+    document.getElementById('formEditarObjeto').action = `/admin/inventario/objetos/editar/${id}`;
+    
+    var modal = new bootstrap.Modal(document.getElementById('modalEditarObjeto'));
+    modal.show();
+}
+
+function editarObjetoFromData(button) {
+    const id = button.getAttribute('data-objeto-id');
+    const nombre = button.getAttribute('data-objeto-nombre');
+    const categoria = button.getAttribute('data-objeto-categoria');
+    const descripcion = button.getAttribute('data-objeto-descripcion');
+    
+    editarObjeto(id, nombre, categoria, descripcion);
+}
+
+// Establecer ancho de la barra de progreso
+document.addEventListener('DOMContentLoaded', function() {
+    const progressBar = document.getElementById('progresoInventario');
+    if (progressBar) {
+        const porcentaje = progressBar.getAttribute('data-porcentaje');
+        progressBar.style.width = porcentaje + '%';
+    }
+});
+
+// Función para descargar inventario completo
+function descargarInventarioCompleto() {
+    // Recopilar datos de todas las habitaciones
+    const inventarioCompleto = {
+        fecha: "{{ fecha_hoy.strftime('%d de %B de %Y') }}",
+        resumen: {
+            total_habitaciones: {{ habitaciones|length }},
+            objetos_completos: {{ resumen_hoy.objetos_completos or 0 }},
+            objetos_faltantes: {{ resumen_hoy.objetos_faltantes or 0 }},
+            objetos_pendientes: {{ resumen_hoy.objetos_pendientes or 0 }},
+            porcentaje_completado: {{ resumen_hoy.porcentaje_completado or 0 }}
+        },
+        habitaciones: []
+    };
+    
+    // Obtener datos de cada habitación desde la tabla
+    document.querySelectorAll('tbody tr').forEach(fila => {
+        const celdas = fila.querySelectorAll('td');
+        if (celdas.length >= 4) {
+            const habitacion = {
+                nombre: celdas[0].textContent.trim(),
+                estado: celdas[1].textContent.trim(),
+                progreso: celdas[2].textContent.trim(),
+                ultima_revision: celdas[3].textContent.trim()
+            };
+            inventarioCompleto.habitaciones.push(habitacion);
+        }
+    });
+    
+    // Generar CSV
+    let csvContent = "INVENTARIO COMPLETO - HOTEL ISLA ENCANTO\\n";
+    csvContent += "Fecha: " + inventarioCompleto.fecha + "\\n\\n";
+    
+    csvContent += "RESUMEN GENERAL\\n";
+    csvContent += "Total Habitaciones," + inventarioCompleto.resumen.total_habitaciones + "\\n";
+    csvContent += "Objetos Completos," + inventarioCompleto.resumen.objetos_completos + "\\n";
+    csvContent += "Objetos Faltantes," + inventarioCompleto.resumen.objetos_faltantes + "\\n";
+    csvContent += "Objetos Pendientes," + inventarioCompleto.resumen.objetos_pendientes + "\\n";
+    csvContent += "Porcentaje Completado," + inventarioCompleto.resumen.porcentaje_completado + "%\\n\\n";
+    
+    csvContent += "DETALLE POR HABITACIONES\\n";
+    csvContent += "Habitación,Estado,Progreso,Última Revisión\\n";
+    
+    inventarioCompleto.habitaciones.forEach(habitacion => {
+        csvContent += `"${habitacion.nombre}","${habitacion.estado}","${habitacion.progreso}","${habitacion.ultima_revision}"\\n`;
+    });
+    
+    // Crear y descargar archivo
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `inventario_completo_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+</script>
+
+{% endblock %}

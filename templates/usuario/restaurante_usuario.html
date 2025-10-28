@@ -1,72 +1,299 @@
 {% extends 'usuario/base.html' %}
 {% block content %}
-<br>
-<br>
-<div class="container mt-5">
-  <h3 class="mb-4">🍽️ Menú del Restaurante</h3>
-  <div class="row">
-    {% for p in platos %}
-    <div class="col-md-4 mb-3">
-      <div class="card shadow-sm rounded-4 text-center">
-        <img src="{{ p.imagen or '/static/img/default.png' }}" class="card-img-top" alt="{{ p.nombre }}">
-        <div class="card-body">
-          <h5>{{ p.nombre }}</h5>
-          <p class="text-muted">{{ p.categoria }}</p>
-          <p>${{ p.precio }}</p>
-          <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalReserva{{ p.idPlato }}">
-            Reservar
-          </button>
-        </div>
-      </div>
-    </div>
+<br><br>
+<div class="container mt-4 usuario-restaurante">
+  <div class="d-flex justify-content-end mb-2">
+    <button id="topCartButton" class="btn btn-outline-primary" title="Ver carrito">
+      🍽️ <span id="cartCount" class="badge bg-primary ms-2">0</span>
+    </button>
+  </div>
 
-    <!-- Modal Reserva -->
-    <div class="modal fade" id="modalReserva{{ p.idPlato }}" tabindex="-1">
-      <div class="modal-dialog modal-dialog-centered">
-        <form class="modal-content" method="POST" action="{{ url_for('usuario_restaurante.reservar') }}">
-          <div class="modal-header">
-            <h5 class="modal-title">Reservar {{ p.nombre }}</h5>
-            <button class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <input type="hidden" name="idPlato" value="{{ p.idPlato }}">
-            <div class="mb-2">
-              <label>Nombre</label>
-              <input class="form-control" name="nombreCliente" required>
-            </div>
-            <div class="mb-2">
-              <label>Teléfono</label>
-              <input class="form-control" name="telefono" required>
-            </div>
-            <div class="mb-2">
-              <label>Documento</label>
-              <input class="form-control" name="numeroDocumento" required>
-            </div>
-            <div class="mb-2">
-              <label>Fecha</label>
-              <input class="form-control" type="date" name="fecha" required>
-            </div>
-            <div class="mb-2">
-              <label>Hora</label>
-              <input class="form-control" type="time" name="hora" required>
-            </div>
-            <div class="mb-2">
-              <label>Mesa</label>
-              <select class="form-select" name="idMesa" required>
-                <option value="" disabled selected>Seleccione una mesa</option>
-                {% for m in mesas %}
-                  <option value="{{ m.idMesa }}">Mesa {{ m.numeroMesa }} (Capacidad: {{ m.capacidad }})</option>
-                {% endfor %}
-              </select>
+  {% set categorias = ['Desayuno','Almuerzo','Cena'] %}
+  {% for cat in categorias %}
+    <h5 class="mt-3">{{ cat }}</h5>
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+      {% for p in platos if p.categoria == cat %}
+        <div class="col d-flex">
+          <div class="card h-100 usuario-card w-100">
+            <img src="{{ url_for('static', filename=p.imagen or 'img/default_food.jpg') }}" class="usuario-card-img">
+            <div class="card-body d-flex flex-column">
+              <h6 class="mb-1">{{ p.nombre }}</h6>
+              <p class="text-muted small mb-2">{{ p.descripcion or '' }}</p>
+              <p class="fw-bold mb-2">${{ '{:,.0f}'.format(p.precio|float) }}</p>
+              <div class="mt-auto d-flex gap-2">
+                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#infoPlato{{ p.idPlato }}">Especificaciones</button>
+                <button type="button" class="btn btn-success btn-sm" data-add-to-cart="1"
+                        data-id="{{ p.idPlato }}"
+                        data-nombre="{{ p.nombre }}"
+                        data-precio="{{ p.precio }}"
+                        data-img="{{ url_for('static', filename=p.imagen or 'img/default_food.jpg') }}">
+                  Reservar
+                </button>
+              </div>
             </div>
           </div>
-          <div class="modal-footer">
-            <button class="btn btn-primary" type="submit">Confirmar Reserva</button>
+        </div>
+
+        <!-- Modal info plato -->
+        <div class="modal fade" id="infoPlato{{ p.idPlato }}" tabindex="-1">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header"><h5>{{ p.nombre }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+              <div class="modal-body">
+                <img src="{{ url_for('static', filename=p.imagen or 'img/default_food.jpg') }}" class="img-fluid mb-2">
+                <p><strong>Precio:</strong> ${{ '{:,.0f}'.format(p.precio) }}</p>
+                <p>{{ p.descripcion }}</p>
+              </div>
+            </div>
           </div>
-        </form>
+        </div>
+
+        <!-- Modal reservar plato (formulario específico para este plato) -->
+        <div class="modal fade" id="reservarPlato{{ p.idPlato }}" tabindex="-1">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <form method="POST" action="{{ url_for('usuario_restaurante.reservar') }}">
+                <input type="hidden" name="idPlato[]" value="{{ p.idPlato }}">
+                <div class="modal-header">
+                  <h5>Reservar: {{ p.nombre }}</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-2">
+                      <label class="form-label">Nombre</label>
+                      <input class="form-control" name="cliente_nombre[]" required>
+                    </div>
+                    <div class="mb-2">
+                      <label class="form-label">Teléfono</label>
+                      <input class="form-control" name="cliente_telefono[]">
+                    </div>
+                    <div class="mb-2">
+                      <label class="form-label">Número de documento</label>
+                      <input class="form-control" name="numeroDocumento" required>
+                    </div>
+                  <div class="mb-2">
+                    <label class="form-label">Mesa</label>
+                    <select class="form-select" name="idMesa" required>
+                      <option value="" disabled selected>Seleccione mesa</option>
+                      {% for m in mesas %}
+                        <option value="{{ m.idMesa }}">Mesa {{ m.numeroMesa }} (Capacidad: {{ m.capacidad }})</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="row g-2">
+                    <div class="col-md-6">
+                      <label class="form-label">Fecha</label>
+                      <input type="date" class="form-control" name="fecha" required>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Hora</label>
+                      <input type="time" class="form-control" name="hora" required>
+                    </div>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                  <button class="btn btn-success" type="submit">Reservar y generar factura</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+      {% endfor %}
+    </div>
+  {% endfor %}
+
+</div>
+
+<!-- Modal factura (igual que ya tienes, se muestra si backend envía invoice) -->
+<div class="modal fade" id="modalFactura" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content" id="factura-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Factura</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="factura-html">
+        {% if invoice %}
+          <div id="invoice-area" class="p-3">
+            <h4>Isla Encanto</h4>
+            <p><strong>Mesa:</strong> {{ invoice.mesa_numero }}</p>
+            <p><strong>Fecha:</strong> {{ invoice.fecha }} — <strong>Hora:</strong> {{ invoice.hora }}</p>
+            <hr>
+            <h6>Clientes:</h6>
+            <ul>
+              {% for c in invoice.clientes %}
+                <li>{{ c.nombre }} {% if c.telefono %}- {{ c.telefono }}{% endif %}</li>
+              {% endfor %}
+            </ul>
+            <hr>
+            <h6>Platos</h6>
+            <ul>
+              {% for p in invoice.platos %}
+                <li>{{ p.nombre }} — ${{ '{:,.0f}'.format(p.precio) }}</li>
+              {% endfor %}
+            </ul>
+            <hr>
+            <h5>Total: ${{ '{:,.0f}'.format(invoice.total) }}</h5>
+          </div>
+        {% else %}
+          <p>No hay factura disponible.</p>
+        {% endif %}
+      </div>
+      <div class="modal-footer">
+        <button id="download-invoice" class="btn btn-primary">Descargar PDF</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
       </div>
     </div>
-    {% endfor %}
   </div>
 </div>
+
+<!-- html2pdf -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+<script>
+// Cart logic (client-side, stored in localStorage under 'restCart')
+(function(){
+  const STORAGE_KEY = 'restCart';
+  const cartBtn = document.getElementById('cartButton');
+  const cartCount = document.getElementById('cartCount');
+  const cartModalEl = document.getElementById('cartModal');
+  const cartModal = new bootstrap.Modal(cartModalEl);
+  const cartItemsContainer = document.getElementById('cart-items');
+  const cartSubtotalEl = document.getElementById('cartSubtotal');
+  const generateBtn = document.getElementById('generateCartInvoice');
+  const clearBtn = document.getElementById('clearCart');
+  const invoiceModal = new bootstrap.Modal(document.getElementById('cartInvoiceModal'));
+
+  function loadCart(){
+    try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e){ return []; }
+  }
+  function saveCart(cart){ localStorage.setItem(STORAGE_KEY, JSON.stringify(cart)); updateCartUI(); }
+
+  function updateCartUI(){
+    const cart = loadCart();
+    const totalItems = cart.reduce((s,i)=>s+i.qty,0);
+    cartCount.textContent = totalItems;
+    renderCart();
+  }
+
+  function addToCart(item){
+    const cart = loadCart();
+    const existing = cart.find(c=>c.id == item.id);
+    if(existing){ existing.qty += 1; } else { cart.push({...item, qty:1}); }
+    saveCart(cart);
+    cartModal.show();
+  }
+
+  function renderCart(){
+    const cart = loadCart();
+    cartItemsContainer.innerHTML = '';
+    let subtotal=0;
+    if(cart.length===0){ cartItemsContainer.innerHTML = '<p class="text-muted">El carrito está vacío.</p>'; cartSubtotalEl.textContent = '$0'; return; }
+    cart.forEach(item => {
+      subtotal += item.precio * item.qty;
+      const row = document.createElement('div');
+      row.className = 'list-group-item d-flex gap-3 align-items-center';
+      row.innerHTML = `
+        <img src="${item.imagen}" alt="" style="width:84px;height:64px;object-fit:cover;border-radius:6px;">
+        <div class="flex-grow-1">
+          <div class="d-flex justify-content-between"><div><strong>${item.nombre}</strong></div><div>$${Number(item.precio).toLocaleString()}</div></div>
+          <div class="mt-2 d-flex align-items-center gap-2">
+            <button class="btn btn-sm btn-outline-secondary btn-decrease" data-id="${item.id}">-</button>
+            <input class="form-control form-control-sm qty-input" data-id="${item.id}" type="number" min="1" value="${item.qty}" style="width:70px">
+            <button class="btn btn-sm btn-outline-secondary btn-increase" data-id="${item.id}">+</button>
+            <button class="btn btn-sm btn-danger ms-3 btn-remove" data-id="${item.id}">Eliminar</button>
+          </div>
+        </div>
+      `;
+      cartItemsContainer.appendChild(row);
+    });
+    cartSubtotalEl.textContent = '$' + Number(subtotal).toLocaleString();
+  }
+
+  // Delegation for qty and remove
+  cartItemsContainer.addEventListener('click', function(e){
+    const id = e.target.getAttribute('data-id');
+    if(!id) return;
+    const cart = loadCart();
+    const idx = cart.findIndex(c=>String(c.id)===String(id));
+    if(idx === -1) return;
+    if(e.target.classList.contains('btn-decrease')){ cart[idx].qty = Math.max(1, cart[idx].qty-1); saveCart(cart); }
+    if(e.target.classList.contains('btn-increase')){ cart[idx].qty = cart[idx].qty+1; saveCart(cart); }
+    if(e.target.classList.contains('btn-remove')){ cart.splice(idx,1); saveCart(cart); }
+  });
+
+  cartItemsContainer.addEventListener('change', function(e){
+    if(e.target.classList.contains('qty-input')){
+      const id = e.target.getAttribute('data-id');
+      const q = parseInt(e.target.value) || 1;
+      const cart = loadCart();
+      const it = cart.find(c=>String(c.id)===String(id));
+      if(it){ it.qty = Math.max(1,q); saveCart(cart); }
+    }
+  });
+
+  // Clear
+  clearBtn.addEventListener('click', function(){ localStorage.removeItem(STORAGE_KEY); updateCartUI(); });
+
+  // Add click handlers to elements marked with data-add-to-cart (delegation)
+  document.addEventListener('click', function(e){
+    const target = e.target.closest('[data-add-to-cart]');
+    if(!target) return;
+    const id = target.getAttribute('data-id');
+    const nombre = target.getAttribute('data-nombre');
+    const precio = Number(target.getAttribute('data-precio')||0);
+    const imagen = target.getAttribute('data-img') || '';
+    addToCart({id,nombre,precio,imagen});
+  });
+
+  // Open cart via either floating or top button
+  const topBtn = document.getElementById('topCartButton');
+  const floatingBtn = document.getElementById('cartButton');
+  const openBtns = [topBtn, floatingBtn].filter(Boolean);
+  openBtns.forEach(b=>b.addEventListener('click', ()=>cartModal.show()));
+
+  // Generate invoice HTML and show invoice modal
+  generateBtn.addEventListener('click', function(){
+    const cart = loadCart();
+    if(cart.length===0){ alert('El carrito está vacío'); return; }
+    const nombre = document.getElementById('cart_nombre').value || '';
+    const telefono = document.getElementById('cart_telefono').value || '';
+    const documento = document.getElementById('cart_documento').value || '';
+    const mesaSel = document.getElementById('cart_mesa').value || '';
+    const fecha = document.getElementById('cart_fecha').value || '';
+    const hora = document.getElementById('cart_hora').value || '';
+    // Build invoice HTML
+    let total = 0;
+    const itemsHtml = cart.map(i=>{ total += i.precio * i.qty; return `<tr><td>${i.qty}</td><td><img src="${i.imagen}" style="width:64px;height:48px;object-fit:cover;border-radius:4px;margin-right:8px;"> ${i.nombre}</td><td>$${Number(i.precio).toLocaleString()}</td><td>$${Number(i.precio*i.qty).toLocaleString()}</td></tr>` }).join('');
+    const invoiceHtml = `
+      <div id="cart-invoice-area">
+        <h4>Isla Encanto — Factura</h4>
+        <p><strong>Cliente:</strong> ${nombre} ${telefono ? '- ' + telefono : ''}</p>
+        <p><strong>Documento:</strong> ${documento}</p>
+        <p><strong>Mesa:</strong> ${mesaSel ? 'Mesa ' + mesaSel : 'No asignada'} — <strong>Fecha/Hora:</strong> ${fecha} ${hora}</p>
+        <hr>
+        <table class="table">
+          <thead><tr><th>Cant</th><th>Producto</th><th>Precio U.</th><th>Subtotal</th></tr></thead>
+          <tbody>${itemsHtml}</tbody>
+        </table>
+        <hr>
+        <h5>Total: $${Number(total).toLocaleString()}</h5>
+      </div>
+    `;
+    document.getElementById('cart-invoice-body').innerHTML = invoiceHtml;
+    invoiceModal.show();
+  });
+
+  // Download generated invoice
+  document.getElementById('download-cart-invoice').addEventListener('click', function(){
+    const el = document.getElementById('cart-invoice-area');
+    if(!el) return alert('No hay factura para descargar');
+    html2pdf().set({margin:0.5, filename:'factura_isla_encanto.pdf', jsPDF:{unit:'in', format:'a4'}}).from(el).save();
+  });
+
+  // Final init
+  updateCartUI();
+})();
+</script>
 {% endblock %}

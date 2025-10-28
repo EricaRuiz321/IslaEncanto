@@ -8,7 +8,7 @@
     {% for p in platos %}
     <div class="col-md-4 mb-3">
       <div class="card shadow-sm rounded-4 text-center">
-        <img src="{{ p.imagen or '/static/img/default.png' }}" class="card-img-top" alt="{{ p.nombre }}">
+        <img src="{{ url_for('static', filename=p.imagen) if p.imagen else url_for('static', filename='img/default.png') }}" class="card-img-top" alt="{{ p.nombre }}">
         <div class="card-body">
           <h5>{{ p.nombre }}</h5>
           <p class="text-muted">{{ p.categoria }}</p>

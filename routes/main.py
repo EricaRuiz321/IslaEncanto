@@ -1,95 +1,166 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session
-from datetime import date
-from datetime import datetime
+from datetime import date, datetime
 from models.nuevahabitacion import NuevaHabitacion
-from models.huesped import Huesped
+from models.reservahuesped import ReservaHuesped
 from models.nuevamesa import NuevaMesa
 from models.nuevoplato import NuevoPlato
 
 main_bp = Blueprint('main', __name__)
 
-#Rutas Home ---------------------------------------------------------
- 
+# ---------------------------------------------------------
+# Rutas Home
+# ---------------------------------------------------------
 @main_bp.route('/')
 def home():
     return render_template('home/Home.html')
+
 
 @main_bp.route('/hospedaje')
 def hospedaje():
     habitaciones = NuevaHabitacion.query.order_by(NuevaHabitacion.id.desc()).all()
     return render_template('home/hospedaje.html', habitaciones=habitaciones)
 
+
 @main_bp.route('/restaurante')
 def restaurantes():
-    return render_template('home/Restaurante.html')
+    # Mostrar platos en el home por sección
+    try:
+        platos = NuevoPlato.query.order_by(NuevoPlato.categoria, NuevoPlato.nombre).all()
+    except Exception:
+        platos = []
+    return render_template('home/Restaurante.html', platos=platos)
+
 
 @main_bp.route('/nosotros')
 def nosotros():
     return render_template('home/Nosotros.html')
 
+
 @main_bp.route('/Experiencias', methods=['GET', 'POST'])
 def experiencias():
-    comentarios = []
-    if request.method == 'POST':
-        contenido = request.form.get('contenido')
-        rating = request.form.get('rating', 0)
-        # Import current_user lazily to avoid hard dependency on flask_login at import time
-        try:
-            from flask_login import current_user
-        except Exception:
-            current_user = None
+    # Mostrar platos, habitaciones y comentarios reales desde la base de datos
+    try:
+        platos = NuevoPlato.query.order_by(NuevoPlato.categoria, NuevoPlato.nombre).all()
+    except Exception:
+        platos = []
 
-        if current_user and getattr(current_user, 'is_authenticated', False):
-            username = getattr(current_user, 'usuario', None) or getattr(current_user, 'username', None) or session.get('user', {}).get('nombre')
-            nuevo = {
-                'user': {'username': username or 'Anónimo', 'avatar': None},
-                'contenido': contenido,
-                'rating': int(rating) if rating else 0,
-                'created_at': datetime.now()
-            }
-            comentarios.append(nuevo)
-    return render_template('home/Experiencias.html', comentarios=comentarios)
+    try:
+        habitaciones = NuevaHabitacion.query.order_by(NuevaHabitacion.id.desc()).all()
+    except Exception:
+        habitaciones = []
 
-#Rutas Usuario -----------------------------------------------------------
+    try:
+        from models.comentario import Comentario
+        comentarios = Comentario.query.order_by(Comentario.created_at.desc()).all()
+    except Exception:
+        comentarios = []
 
+    # Detectar si el usuario está logueado: preferir flask-login, fallback a session
+    try:
+        from flask_login import current_user
+        is_auth = getattr(current_user, 'is_authenticated', False)
+    except Exception:
+        is_auth = False
+    if not is_auth:
+        is_auth = bool(session.get('rol') or session.get('user'))
+
+    return render_template('home/Experiencias.html', platos=platos, habitaciones=habitaciones, comentarios=comentarios, is_authenticated=is_auth)
+
+
+# -----------------------------------------------------------
+# Rutas Usuario
+# -----------------------------------------------------------
 @main_bp.route('/home_usuario')
 def home_usuario():
     return render_template('usuario/home_usuario.html')
+
 
 @main_bp.route('/hospedaje_usuario')
 def hospedaje_usuario():
     habitaciones = NuevaHabitacion.query.order_by(NuevaHabitacion.id.desc()).all()
     return render_template('usuario/hospedaje_usuario.html', habitaciones=habitaciones, current_date=date.today())
 
+
+@main_bp.route('/nosotros_usuario')
+def nosotros_usuario():
+    return render_template('usuario/nosotros_usuario.html')
+
+
 @main_bp.route('/restaurante_usuario')
 def restaurante_usuario():
-    return render_template('usuario/restaurante_usuario.html')
+    # Mostrar platos también en la vista de usuario
+    try:
+        platos = NuevoPlato.query.order_by(NuevoPlato.categoria, NuevoPlato.nombre).all()
+    except Exception:
+        platos = []
+    try:
+        mesas = NuevaMesa.query.filter_by(disponible=True).all()
+    except Exception:
+        mesas = []
+    return render_template('usuario/restaurante_usuario.html', platos=platos, mesas=mesas)
+
 
 @main_bp.route('/experiencias_usuario')
 def experiencias_usuario():
-    return render_template('usuario/experiencias_usuario.html')
+    # Asegurar que la plantilla recibe los mismos objetos que la vista pública
+    try:
+        platos = NuevoPlato.query.order_by(NuevoPlato.categoria, NuevoPlato.nombre).all()
+    except Exception:
+        platos = []
+    try:
+        habitaciones = NuevaHabitacion.query.order_by(NuevaHabitacion.id.desc()).all()
+    except Exception:
+        habitaciones = []
 
-#@main_bp.route('/perfil_usuario')
-#def perfil_usuario():
-    #return render_template('usuario/perfil_usuario.html')
+    # Comentarios: usar el modelo Comentario si está disponible
+    try:
+        from models.comentario import Comentario
+        comentarios = Comentario.query.order_by(Comentario.created_at.desc()).all()
+    except Exception:
+        comentarios = []
+
+    # Detectar si el usuario está logueado: preferir flask-login, fallback a session
+    try:
+        from flask_login import current_user
+        is_auth = getattr(current_user, 'is_authenticated', False)
+    except Exception:
+        is_auth = False
+    # fallback: sesión usada por demo-login o implementaciones sin flask-login
+    from flask import session
+    if not is_auth:
+        is_auth = bool(session.get('rol') or session.get('user'))
+
+    return render_template('usuario/experiencias_usuario.html', platos=platos, habitaciones=habitaciones, comentarios=comentarios, is_authenticated=is_auth)
 
 
-#Rutas Admin ------------------------------------------------------------
-
+# ------------------------------------------------------------
+# Rutas Admin
+# ------------------------------------------------------------
 @main_bp.route('/home_admin')
 def home_admin():
     return render_template('dashboard/home_admin.html')
 
+
 @main_bp.route('/hospedaje_admin')
 def hospedaje_admin():
-    huespedes = Huesped.query.all()
+    # Mostrar reservas (modelo unificado)
+    huespedes = ReservaHuesped.query.all()
     habitaciones = NuevaHabitacion.query.all()
     return render_template('dashboard/hospedaje_admin.html', huespedes=huespedes, habitaciones=habitaciones)
+
 
 @main_bp.route('/habitaciones_admin')
 def habitaciones_admin():
     habitaciones = NuevaHabitacion.query.order_by(NuevaHabitacion.id.desc()).all()
-    return render_template('dashboard/habitaciones_admin.html', habitaciones=habitaciones)
+    
+    # Obtener objetos disponibles desde la tabla de inventario
+    from models.objetoinventario import ObjetoInventario
+    objetos_disponibles = ObjetoInventario.query.filter_by(activo=True).order_by(ObjetoInventario.nombre).all()
+    
+    return render_template('dashboard/habitaciones_admin.html', 
+                         habitaciones=habitaciones, 
+                         objetos_disponibles=objetos_disponibles)
+
 
 @main_bp.route('/estadisticas_admin')
 def estadisticas_admin():
@@ -101,11 +172,14 @@ def estadisticas_admin():
 def restaurante_admin():
     platos = NuevoPlato.query.all()
     mesas = NuevaMesa.query.all()
+    # Mostrar por defecto la vista de Reservas para que aparezca primero
     return render_template('dashboard/restaurante_admin.html', platos=platos, mesas=mesas)
+
 
 @main_bp.route('/experiencias_admin')
 def experiencias_admin():
     return render_template('dashboard/experiencias_admin.html')
+
 
 @main_bp.route('/nosotros_admin')
 def nosotros_admin():
@@ -113,8 +187,10 @@ def nosotros_admin():
 
 
 
-# Ruta de login demo para pruebas rápidas ---------------------------------
 
+# ------------------------------------------------------------
+# Ruta de login demo para pruebas rápidas
+# ------------------------------------------------------------
 @main_bp.route('/demo-login', methods=['GET', 'POST'])
 def demo_login():
     # Demo login kept for quick testing under /demo-login

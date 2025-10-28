@@ -6,14 +6,55 @@
 
   <!-- Encabezado con botones -->
   <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
-    <a href="{{ url_for('habitacionHuesped.nuevo_huesped') }}" class="btn btn-primary">
-      + Añadir Huésped
-    </a>
+    <!-- Cambié el color del botón a info -->
+    <button class="btn btn-info"
+            data-bs-toggle="modal"
+            data-bs-target="#cambiarEstadoModal">
+      Estado de habitaciones
+    </button>
 
     <div class="d-flex gap-2 mt-2 mt-md-0">
       <a href="{{ url_for('main.hospedaje_admin') }}" class="btn btn-primary">👥 Huéspedes</a>
       <a href="{{ url_for('main.habitaciones_admin') }}" class="btn btn-secondary">🏠 Habitaciones</a>
       <a href="{{ url_for('main.estadisticas_admin') }}" class="btn btn-success">📊 Estadísticas</a>
+    </div>
+  </div>
+
+  <!-- Modal: Cambiar estado de habitaciones -->
+  <div class="modal fade" id="cambiarEstadoModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-4 shadow">
+        <div class="modal-header bg-warning text-dark rounded-top-4">
+          <h5 class="modal-title">Estado de habitación</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+  <form method="POST" action="{{ url_for('reservahuesped.cambiar_estado') }}">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="habitacionSelect" class="form-label">Habitación</label>
+              <select id="habitacionSelect" name="habitacion_id" class="form-select" required>
+                <option value="" disabled selected>Selecciona una habitación</option>
+                {% for habitacion in habitaciones %}
+                  <option value="{{ habitacion.id }}">{{ habitacion.nombre }} — {{ habitacion.estado }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="estadoSelect" class="form-label">Nuevo estado</label>
+              <select id="estadoSelect" name="estado" class="form-select" required>
+                <option value="Disponible">Disponible</option>
+                <option value="Ocupada">Ocupada</option>
+                <option value="Mantenimiento">Mantenimiento</option>
+              </select>
+            </div>
+            <!-- Añadir token CSRF si se usa -->
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar cambio</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 
@@ -42,36 +83,23 @@
                   <p class="mb-1 fw-semibold">👤 {{ h.nombre }}</p>
                   <p class="text-muted small mb-2">📞 {{ h.telefono }}</p>
 
-                  <!-- Botones -->
-                  <div class="d-flex flex-column gap-2 mt-2">
-                    <button class="btn btn-outline-primary btn-sm"
-                            data-bs-toggle="modal"
-                            data-bs-target="#detalle{{ h.idHuesped }}">
+                  <!-- Botones: EDITAR + ESPECIFICACIONES + ELIMINAR -->
+                  <div class="d-flex gap-2 mt-2 flex-wrap">
+                    {% set modal_id = (h.idHuesped|default(h.id)) %}
+                    <!-- Editar: abre modal de edición -->
+                    <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editar{{ modal_id }}">
+                      ✏️ Editar
+                    </button>
+
+                    <!-- Especificaciones: abre modal de detalle -->
+                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#detalle{{ modal_id }}">
                       Especificaciones
                     </button>
 
-                  
-                  </div>
-                </div>
-
-                <!-- Modal Detalle -->
-                <div class="modal fade" id="detalle{{ h.idHuesped }}" tabindex="-1">
-                  <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content rounded-4 shadow">
-                      <div class="modal-header bg-primary text-white rounded-top-4">
-                        <h5 class="modal-title">{{ h.nombre }}</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                      </div>
-                      <div class="modal-body">
-                        <p><strong>Tipo Documento:</strong> {{ h.tipoDocumento }}</p>
-                        <p><strong>Número Documento:</strong> {{ h.numeroDocumento }}</p>
-                        <p><strong>Teléfono:</strong> {{ h.telefono }}</p>
-                        <p><strong>Correo:</strong> {{ h.correo }}</p>
-                        <p><strong>Procedencia:</strong> {{ h.procedencia }}</p>
-                        <p><strong>Check-in:</strong> {{ h.check_in }}</p>
-                        <p><strong>Check-out:</strong> {{ h.check_out }}</p>
-                      </div>
-                    </div>
+                    <!-- Eliminar huésped -->
+                    <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#eliminar{{ modal_id }}">
+                      🗑️ Eliminar
+                    </button>
                   </div>
                 </div>
               {% endfor %}
@@ -79,19 +107,130 @@
               <p class="text-muted text-center mt-3">Sin huéspedes registrados.</p>
             {% endif %}
 
-            <form method="POST" action="{{ url_for('habitacionHuesped.liberar_habitacion', habitacion_id=habitacion.id) }}">
-            <button type="submit"
-                    class="btn btn-danger btn-sm w-100 mt-2"
-                    {% if habitacion.estado == 'Disponible' %} disabled {% endif %}>
-              🗝️ Liberar habitación
-            </button>
-          </form>
-          
+            <form method="POST" action="{{ url_for('reservahuesped.liberar_habitacion', habitacion_id=habitacion.id) }}">
+              <button type="submit"
+                      class="btn btn-danger btn-sm w-100 mt-2"
+                      {% if habitacion.estado == 'Disponible' %} disabled {% endif %}>
+                🗝️ Liberar habitación
+              </button>
+            </form>
+
           </div>
         </div>
       </div>
     {% endfor %}
   </div>
+
+  {# Renderizamos los modales de especificaciones y edición después #}
+  {% for habitacion in habitaciones %}
+    {% for h in habitacion.huespedes %}
+      {% set modal_id = (h.idHuesped|default(h.id)) %}
+
+      <!-- Modal Detalle (existente) -->
+      <div class="modal fade" id="detalle{{ modal_id }}" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content rounded-4 shadow">
+            <div class="modal-header bg-primary text-white rounded-top-4">
+              <h5 class="modal-title">{{ h.nombre }}</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <p><strong>Tipo Documento:</strong> {{ h.tipoDocumento|default('N/A') }}</p>
+              <p><strong>Número Documento:</strong> {{ h.numeroDocumento|default('N/A') }}</p>
+              <p><strong>Teléfono:</strong> {{ h.telefono|default('N/A') }}</p>
+              <p><strong>Correo:</strong> {{ h.correo|default('N/A') }}</p>
+              <p><strong>Procedencia:</strong> {{ h.procedencia|default('N/A') }}</p>
+              <p><strong>Check-in:</strong> {{ h.check_in|default('N/A') }}</p>
+              <p><strong>Check-out:</strong> {{ h.check_out|default('N/A') }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Editar huésped -->
+      <div class="modal fade" id="editar{{ modal_id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+                    <form method="POST" action="{{ url_for('reservahuesped.editar_huesped', huesped_id=modal_id) }}">
+            <div class="modal-content rounded-4 shadow">
+              <div class="modal-header bg-secondary text-white rounded-top-4">
+                <h5 class="modal-title">Editar huésped</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-2">
+                  <label class="form-label">Nombre</label>
+                  <input class="form-control" name="nombre" value="{{ h.nombre }}" required>
+                </div>
+                <div class="mb-2">
+                  <label class="form-label">Teléfono</label>
+                  <input class="form-control" name="telefono" value="{{ h.telefono }}">
+                </div>
+                <div class="mb-2">
+                  <label class="form-label">Correo</label>
+                  <input class="form-control" name="correo" value="{{ h.correo }}">
+                </div>
+                <div class="mb-2">
+                  <label class="form-label">Tipo documento</label>
+                  <input class="form-control" name="tipoDocumento" value="{{ h.tipoDocumento }}">
+                </div>
+                <div class="mb-2">
+                  <label class="form-label">Número documento</label>
+                  <input class="form-control" name="numeroDocumento" value="{{ h.numeroDocumento }}">
+                </div>
+                <div class="mb-2">
+                  <label class="form-label">Procedencia</label>
+                  <input class="form-control" name="procedencia" value="{{ h.procedencia }}">
+                </div>
+                <div class="row g-2">
+                  <div class="col">
+                    <label class="form-label">Check-in</label>
+                    <input class="form-control" name="check_in" value="{{ h.check_in }}">
+                  </div>
+                  <div class="col">
+                    <label class="form-label">Check-out</label>
+                    <input class="form-control" name="check_out" value="{{ h.check_out }}">
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-primary" type="submit">Guardar</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Modal Eliminar huésped -->
+      <div class="modal fade" id="eliminar{{ modal_id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content rounded-4 shadow">
+            <div class="modal-header bg-danger text-white rounded-top-4">
+              <h5 class="modal-title">⚠️ Eliminar huésped</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <div class="alert alert-warning">
+                <strong>¿Estás seguro?</strong>
+              </div>
+              <p>Esta acción eliminará permanentemente al huésped <strong>{{ h.nombre }}</strong> del sistema.</p>
+              <p class="text-muted">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <form method="POST" action="{{ url_for('reservahuesped.eliminar_huesped', huesped_id=modal_id) }}" style="display: inline;">
+                <button type="submit" class="btn btn-danger">
+                  🗑️ Sí, eliminar huésped
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    {% endfor %}
+  {% endfor %}
+
 </div>
 
 <script>

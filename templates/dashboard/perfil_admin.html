@@ -1,5 +1,150 @@
-{% extends "dashboard/base.html" %}
+{% extends 'dashboard/base.html' %}
 
 {% block content %}
+<br>
+<div class="container mt-5 text-center">
+
+	{% with messages = get_flashed_messages(with_categories=true) %}
+		{% if messages %}
+			<div class="container mt-3">
+				{% for category, msg in messages %}
+					<div class="alert alert-{{ 'warning' if category=='warning' else ('success' if category=='success' else ('danger' if category=='danger' else 'info')) }} alert-dismissible fade show" role="alert">
+						{{ msg }}
+						<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+					</div>
+				{% endfor %}
+			</div>
+		{% endif %}
+	{% endwith %}
+
+	<div class="text-center mb-3">
+		<img src="{{ usuario.foto }}" class="rounded-circle" width="140" height="140" alt="Foto de perfil">
+		<h2 class="mt-3">{{ usuario.nombre or 'Sin nombre' }}</h2>
+		<span class="badge bg-warning text-dark">Miembro {{ usuario.membresia }}</span>
+	</div>
+
+	<hr>
+
+	<h4>Detalles de Contacto</h4>
+	<p><b>Email:</b> {{ usuario.email or '—' }}</p>
+	<p><b>Teléfono:</b> {{ usuario.telefono or '—' }}</p>
+	<p><b>Identificación:</b> {{ usuario.identificacion or '—' }}</p>
+	<p><b>Dirección:</b> {{ usuario.direccion or '—' }}</p>
+
+	<div class="d-flex justify-content-center gap-2 mt-3">
+		<button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalEditar">Editar Perfil</button>
+		<button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#modalFoto">Cambiar Foto</button>
+		<form method="POST" action="{{ url_for('perfil_admin.eliminar_perfil_admin') }}" onsubmit="return confirm('¿Estás seguro que deseas eliminar este perfil? Esta acción no se puede deshacer.');">
+			<button type="submit" class="btn btn-danger">Eliminar perfil</button>
+		</form>
+	</div>
+
+	<hr>
+	<h4>Reservas Activas</h4>
+	{% if reservas_activas %}
+		<ul class="list-group">
+			{% for r in reservas_activas %}
+				<li class="list-group-item">{{ r.hotel }} - {{ r.fecha }}</li>
+			{% endfor %}
+		</ul>
+	{% else %}
+		<p>No hay reservas activas.</p>
+	{% endif %}
+
+	<hr>
+	<h4>Estancias Pasadas</h4>
+	{% if estancias_pasadas %}
+		<ul class="list-group">
+			{% for r in estancias_pasadas %}
+				<li class="list-group-item">{{ r.hotel }} - {{ r.fecha }}</li>
+			{% endfor %}
+		</ul>
+	{% else %}
+		<p>No hay estancias pasadas.</p>
+	{% endif %}
+  
+	<!-- Botón Cerrar sesión al final de las estancias pasadas -->
+	<div class="text-center mt-4 mb-4">
+		{% if is_authenticated %}
+			<form method="POST" action="{{ url_for('auth.logout') }}">
+				<button type="submit" class="btn btn-danger">Cerrar sesión</button>
+			</form>
+		{% endif %}
+	</div>
+</div>
+
+
+<!-- Modal de edición -->
+<div class="modal fade" id="modalEditar" tabindex="-1">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form method="POST" action="{{ url_for('perfil_admin.editar_perfil_admin') }}">
+				<div class="modal-header">
+					<h5 class="modal-title">Editar Perfil</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body">
+					<div class="mb-3">
+						<label class="form-label">Nombre</label>
+						<input type="text" class="form-control" name="nombre" value="{{ usuario.nombre }}">
+					</div>
+					<div class="mb-3">
+						<label class="form-label">Email</label>
+						<input type="email" class="form-control" name="email" value="{{ usuario.email }}">
+					</div>
+					<div class="mb-3">
+						<label class="form-label">Teléfono</label>
+						<input type="text" class="form-control" name="telefono" value="{{ usuario.telefono }}">
+					</div>
+					<div class="mb-3">
+						<label class="form-label">Número de identificación</label>
+						<input type="text" class="form-control" name="identificacion" value="{{ usuario.identificacion }}">
+					</div>
+					<div class="mb-3">
+						<label class="form-label">Dirección</label>
+						<input type="text" class="form-control" name="direccion" value="{{ usuario.direccion }}">
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="submit" class="btn btn-success">Guardar</button>
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+
+<!-- Modal subir/cambiar foto -->
+<div class="modal fade" id="modalFoto" tabindex="-1">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form method="POST" action="{{ url_for('perfil_admin.subir_foto_admin') }}" enctype="multipart/form-data">
+				<div class="modal-header">
+					<h5 class="modal-title">Cambiar Foto de Perfil</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body text-start">
+					<div class="mb-3">
+						<label class="form-label">Seleccionar imagen</label>
+						<input type="file" class="form-control" name="foto" accept="image/*">
+					</div>
+					<div class="mb-3">
+						<small class="text-muted">Formatos permitidos: png, jpg, jpeg, gif. Tamaño recomendado: 300x300px.</small>
+					</div>
+					<div class="d-flex gap-2">
+						<button type="submit" class="btn btn-primary">Subir</button>
+						<form method="POST" action="{{ url_for('perfil_admin.eliminar_foto_admin') }}">
+							<button type="submit" class="btn btn-danger">Eliminar foto</button>
+						</form>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
 
 {% endblock %}

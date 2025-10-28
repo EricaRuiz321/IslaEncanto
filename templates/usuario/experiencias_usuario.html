@@ -1,0 +1,294 @@
+{% extends 'usuario/base.html' %}
+
+{% block title %}Experiencias{% endblock %}
+
+{% block content %}
+<br>
+<div class="container mt-3">
+    <h2>Experiencias de nuestros huéspedes</h2>
+
+    <!-- Galería habitaciones -->
+    <section class="mt-4">
+      <h4>Habitaciones</h4>
+      <div class="row g-2">
+        {% if habitaciones %}
+          {% for h in habitaciones %}
+            <div class="col-sm-6 col-md-3">
+              <div class="card">
+                <img src="{{ url_for('static', filename=(h.imagen if h.imagen else 'img/habitacion(1).png')) }}" class="card-img-top" style="height:160px; object-fit:cover;">
+                <div class="card-body">
+                  <h6 class="card-title mb-1">{{ h.nombre or ('Habitación ' ~ h.idHabitacion) }}</h6>
+                  <p class="small text-muted mb-1">{{ h.descripcion[:80] if h.descripcion else '' }}</p>
+                  <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalComentarios" data-tipo="habitacion" data-item="{{ h.idHabitacion }}">Añadir comentario</button>
+
+                  <!-- Comentarios asociados a esta habitación -->
+                  <div class="mt-3">
+                    {% for c in comentarios %}
+                      {% if c.habitacion_id and c.habitacion_id == h.idHabitacion %}
+                        <div class="border rounded p-2 mb-2">
+                          <div class="d-flex justify-content-between">
+                            <div>
+                              <strong>{{ c.user.usuario if c.user else 'Anon' }}</strong>
+                              <div class="small text-muted">{{ c.created_at.strftime('%d %b %Y') if c.created_at else '' }}</div>
+                              {% if c.plato_id %}
+                                <div class="small text-secondary">Plato: #{{ c.plato_id }}</div>
+                              {% elif c.habitacion_id %}
+                                <div class="small text-secondary">Habitación: #{{ c.habitacion_id }}</div>
+                              {% endif %}
+                            </div>
+                            <div class="text-end">
+                              {% if (current_user is defined and current_user.is_authenticated and ( (c.user and getattr(current_user,'idUsuario',None) == (c.user.idUsuario if c.user else None)) or getattr(current_user,'rol','') == 'admin' )) or is_authenticated or (session.get('user') and session.get('user').get('rol') == 'admin') %}
+                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalEditUser{{ c.idComentario }}">Editar</button>
+                                <form method="POST" action="{{ url_for('experiencias.user_delete', comentario_id=c.idComentario) }}" style="display:inline;">
+                                  <button class="btn btn-sm btn-danger" onclick="return confirm('Eliminar comentario?')">Eliminar</button>
+                                </form>
+                              {% endif %}
+                            </div>
+                          </div>
+                          <p class="mb-0 mt-2">{{ c.contenido }}</p>
+                        </div>
+
+                        <!-- Modal editar (usuario) -->
+                        <div class="modal fade" id="modalEditUser{{ c.idComentario }}" tabindex="-1" aria-hidden="true">
+                          <div class="modal-dialog modal-dialog-centered">
+                            <form method="POST" action="{{ url_for('experiencias.user_edit', comentario_id=c.idComentario) }}">
+                              <div class="modal-content">
+                                <div class="modal-header">
+                                  <h5 class="modal-title">Editar comentario</h5>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                </div>
+                                <div class="modal-body">
+                                  <div class="mb-3">
+                                    <label class="form-label">Contenido</label>
+                                    <textarea class="form-control" name="contenido" rows="4" required>{{ c.contenido }}</textarea>
+                                  </div>
+                                  <div class="mb-3">
+                                    <label class="form-label">Rating</label>
+                                    <select name="rating" class="form-select" style="width:120px;">
+                                      <option value="">--</option>
+                                      <option value="5" {% if c.rating == 5 %}selected{% endif %}>5</option>
+                                      <option value="4" {% if c.rating == 4 %}selected{% endif %}>4</option>
+                                      <option value="3" {% if c.rating == 3 %}selected{% endif %}>3</option>
+                                      <option value="2" {% if c.rating == 2 %}selected{% endif %}>2</option>
+                                      <option value="1" {% if c.rating == 1 %}selected{% endif %}>1</option>
+                                    </select>
+                                  </div>
+                                </div>
+                                <div class="modal-footer">
+                                  <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                  <button class="btn btn-primary" type="submit">Guardar</button>
+                                </div>
+                              </div>
+                            </form>
+                          </div>
+                        </div>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <!-- fallback images -->
+          {% set imgs = ['habitacion(1).png','habitacion(2).png','habitacion(3).png'] %}
+          {% for img in imgs %}
+            <div class="col-sm-6 col-md-3">
+              <div class="card">
+                <img src="{{ url_for('static', filename='img/'~img) }}" class="card-img-top" style="height:160px; object-fit:cover;">
+              </div>
+            </div>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </section>
+
+    <!-- Galería platos -->
+    <section class="mt-4">
+      <h4>Platos</h4>
+      <div class="row g-2">
+        {% if platos %}
+          {% for p in platos %}
+            <div class="col-sm-6 col-md-3">
+              <div class="card">
+                <img src="{{ url_for('static', filename=(p.imagen if p.imagen else 'img/r1.jpg')) }}" class="card-img-top" style="height:160px; object-fit:cover;">
+                <div class="card-body">
+                  <h6 class="card-title mb-1">{{ p.nombre }}</h6>
+                  <p class="small text-muted mb-1">{{ p.descripcion[:60] if p.descripcion }}</p>
+                  <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalComentarios" data-tipo="plato" data-item="{{ p.idPlato }}">Añadir comentario</button>
+
+                  <!-- Comentarios asociados a este plato -->
+                  <div class="mt-3">
+                    {% for c in comentarios %}
+                      {% if c.plato_id and c.plato_id == p.idPlato %}
+                        <div class="border rounded p-2 mb-2">
+                          <div class="d-flex justify-content-between">
+                            <div>
+                              <strong>{{ c.user.usuario if c.user else 'Anon' }}</strong>
+                              <div class="small text-muted">{{ c.created_at.strftime('%d %b %Y') if c.created_at else '' }}</div>
+                              {% if c.plato_id %}
+                                <div class="small text-secondary">Plato: #{{ c.plato_id }}</div>
+                              {% elif c.habitacion_id %}
+                                <div class="small text-secondary">Habitación: #{{ c.habitacion_id }}</div>
+                              {% endif %}
+                            </div>
+                            <div class="text-end">
+                              {% if (current_user is defined and current_user.is_authenticated and ( (c.user and getattr(current_user,'idUsuario',None) == (c.user.idUsuario if c.user else None)) or getattr(current_user,'rol','') == 'admin' )) or is_authenticated or (session.get('user') and session.get('user').get('rol') == 'admin') %}
+                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalEditUser{{ c.idComentario }}">Editar</button>
+                                <form method="POST" action="{{ url_for('experiencias.user_delete', comentario_id=c.idComentario) }}" style="display:inline;">
+                                  <button class="btn btn-sm btn-danger" onclick="return confirm('Eliminar comentario?')">Eliminar</button>
+                                </form>
+                              {% endif %}
+                            </div>
+                          </div>
+                          <p class="mb-0 mt-2">{{ c.contenido }}</p>
+                        </div>
+
+                        <!-- Modal editar (usuario) -->
+                        <div class="modal fade" id="modalEditUser{{ c.idComentario }}" tabindex="-1" aria-hidden="true">
+                          <div class="modal-dialog modal-dialog-centered">
+                            <form method="POST" action="{{ url_for('experiencias.user_edit', comentario_id=c.idComentario) }}">
+                              <div class="modal-content">
+                                <div class="modal-header">
+                                  <h5 class="modal-title">Editar comentario</h5>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                </div>
+                                <div class="modal-body">
+                                  <div class="mb-3">
+                                    <label class="form-label">Contenido</label>
+                                    <textarea class="form-control" name="contenido" rows="4" required>{{ c.contenido }}</textarea>
+                                  </div>
+                                  <div class="mb-3">
+                                    <label class="form-label">Rating</label>
+                                    <select name="rating" class="form-select" style="width:120px;">
+                                      <option value="">--</option>
+                                      <option value="5" {% if c.rating == 5 %}selected{% endif %}>5</option>
+                                      <option value="4" {% if c.rating == 4 %}selected{% endif %}>4</option>
+                                      <option value="3" {% if c.rating == 3 %}selected{% endif %}>3</option>
+                                      <option value="2" {% if c.rating == 2 %}selected{% endif %}>2</option>
+                                      <option value="1" {% if c.rating == 1 %}selected{% endif %}>1</option>
+                                    </select>
+                                  </div>
+                                </div>
+                                <div class="modal-footer">
+                                  <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                  <button class="btn btn-primary" type="submit">Guardar</button>
+                                </div>
+                              </div>
+                            </form>
+                          </div>
+                        </div>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="small text-muted">No hay platos para mostrar.</div>
+        {% endif %}
+      </div>
+    </section>
+
+    <hr class="my-4">
+
+    <!-- Formulario rápido / sección de comentarios generales -->
+    <div class="mt-3">
+      <h5>Comentarios</h5>
+
+      {% if (current_user is defined and current_user.is_authenticated) or is_authenticated or session.get('user') %}
+        <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#modalComentarios" data-tipo="general">Añadir comentario</button>
+      {% else %}
+        <a href="{{ login_url }}" class="btn btn-outline-primary mb-3">Inicia sesión para comentar</a>
+      {% endif %}
+
+      {% for comentario in comentarios %}
+        <div class="card mb-2">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <div>
+                <strong>{{ comentario.user.usuario if comentario.user else 'Anon' }}</strong>
+                <div class="small text-muted">{{ comentario.created_at.strftime('%d %b %Y') if comentario.created_at else '' }}</div>
+                {% if comentario.plato_id %}
+                  <div class="small text-secondary">Plato: #{{ comentario.plato_id }}</div>
+                {% elif comentario.habitacion_id %}
+                  <div class="small text-secondary">Habitación: #{{ comentario.habitacion_id }}</div>
+                {% endif %}
+              </div>
+              <div>
+                {% for i in range(1,6) %}
+                  {% if i <= (comentario.rating or 0) %}
+                    <span style="color:#f1c40f">★</span>
+                  {% else %}
+                    <span style="color:#dcdcdc">☆</span>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+            <p class="mt-2 mb-0">{{ comentario.contenido }}</p>
+          </div>
+        </div>
+      {% else %}
+        <div class="small text-muted">Aún no hay comentarios.</div>
+      {% endfor %}
+    </div>
+
+</div>
+
+<!-- Modal para añadir comentario (reutilizable para plato/habitacion/general) -->
+<div class="modal fade" id="modalComentarios" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form method="POST" action="{{ url_for('experiencias.add_comment') }}">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Añadir comentario</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="tipo" id="modal_tipo" value="general">
+          <input type="hidden" name="item_id" id="modal_item" value="">
+          <div class="mb-2">
+            <textarea class="form-control" name="contenido" rows="3" placeholder="Comparte tu experiencia..." required></textarea>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Calificación</label>
+            <select name="rating" class="form-select" style="width:120px;">
+              <option value="">--</option>
+              <option value="5">5</option>
+              <option value="4">4</option>
+              <option value="3">3</option>
+              <option value="2">2</option>
+              <option value="1">1</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          {% if (current_user is defined and current_user.is_authenticated) or is_authenticated or (session.get('user')) %}
+            <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button class="btn btn-primary" type="submit">Publicar comentario</button>
+          {% else %}
+            <div class="text-center w-100 p-3">
+              <a href="{{ login_url }}" class="btn btn-primary">Inicia sesión para comentar</a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var modal = document.getElementById('modalComentarios');
+  modal && modal.addEventListener('show.bs.modal', function (event) {
+    var btn = event.relatedTarget;
+    var tipo = btn && btn.getAttribute('data-tipo') || 'general';
+    var item = btn && btn.getAttribute('data-item') || '';
+    document.getElementById('modal_tipo').value = tipo;
+    document.getElementById('modal_item').value = item;
+  });
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,421 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Inventario {{ habitacion.nombre }} - Isla Encanto{% endblock %}
+
+{% block content %}
+<br>
+<br>
+<br>
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2><i class="fas fa-clipboard-check"></i> 
+            {% if modo_edicion %}Inventario: {{ habitacion.nombre }}{% else %}Ver Inventario: {{ habitacion.nombre }}{% endif %}
+          </h2>
+          <small class="text-muted">{{ fecha_hoy.strftime('%d de %B de %Y') }}</small>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="{{ url_for('inventario.inventario_index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver al Inventario
+          </a>
+        </div>
+      </div>
+
+      <!-- Información de la habitación -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <h5>{{ habitacion.nombre }}</h5>
+              <p class="text-muted">{{ habitacion.descripcion }}</p>
+              <div class="d-flex gap-3">
+                <span class="badge bg-{{ 'success' if habitacion.estado == 'Disponible' else 'warning' }} fs-6">
+                  {{ habitacion.estado }}
+                </span>
+                <span class="text-muted">
+                  <i class="fas fa-users"></i> {{ habitacion.cupo_personas }} personas
+                </span>
+                <span class="text-muted">
+                  <i class="fas fa-dollar-sign"></i> {{ "{:,.0f}".format(habitacion.precio or 0) }}
+                </span>
+              </div>
+            </div>
+            {% if habitacion.imagen %}
+            <div class="col-md-6">
+              <img src="{{ url_for('static', filename=habitacion.imagen) }}" 
+                   alt="{{ habitacion.nombre }}" 
+                   class="img-fluid rounded">
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Formulario de inventario -->
+      {% if objetos_habitacion %}
+      <div class="card">
+        <div class="card-header">
+          <h5><i class="fas fa-list-check"></i> 
+            {% if modo_edicion %}Inventario de Objetos{% else %}Estado del Inventario{% endif %}
+          </h5>
+          <small class="text-muted">
+            {% if modo_edicion %}Marca la cantidad encontrada para cada objeto{% else %}Visualización del inventario realizado{% endif %}
+          </small>
+        </div>
+        <div class="card-body">
+          {% if modo_edicion %}
+          <form action="{{ url_for('inventario.actualizar_inventario') }}" method="POST">
+            <input type="hidden" name="habitacion_id" value="{{ habitacion.id }}">
+            <input type="hidden" name="fecha_inventario" value="{{ fecha_hoy }}">
+          {% endif %}
+            
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead class="table-light">
+                  <tr>
+                    <th>Objeto</th>
+                    <th>Esperado</th>
+                    <th>Encontrado</th>
+                    <th>Estado</th>
+                    <th>Observaciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in objetos_habitacion %}
+                  <tr>
+                    <td>
+                      <strong>{{ item.objeto.nombre }}</strong>
+                      {% if item.objeto.categoria %}
+                      <br><small class="text-muted">{{ item.objeto.categoria }}</small>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <span class="badge bg-info">{{ item.inventario.cantidad_esperada }}</span>
+                    </td>
+                    <td>
+                      {% if modo_edicion %}
+                      <div class="d-flex justify-content-center align-items-center">
+                        <div class="btn-group" role="group" style="box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 8px;">
+                          <button type="button" class="btn btn-outline-danger btn-sm" 
+                                  onclick="cambiarCantidad('cantidad_{{ item.objeto.id }}', -1)"
+                                  style="border-radius: 8px 0 0 8px;">
+                            <i class="fas fa-minus"></i>
+                          </button>
+                          <input type="number" 
+                                 class="form-control text-center fw-bold" 
+                                 name="cantidad_{{ item.objeto.id }}" 
+                                 id="cantidad_{{ item.objeto.id }}"
+                                 value="{{ item.inventario.cantidad_encontrada or 0 }}" 
+                                 min="0" 
+                                 max="10"
+                                 data-objeto-id="{{ item.objeto.id }}"
+                                 data-cantidad-esperada="{{ item.inventario.cantidad_esperada }}"
+                                 onchange="actualizarEstadoFromData(this)"
+                                 style="width: 70px; border-left: none; border-right: none; font-size: 1.1rem;">
+                          <button type="button" class="btn btn-outline-success btn-sm" 
+                                  onclick="cambiarCantidad('cantidad_{{ item.objeto.id }}', 1)"
+                                  style="border-radius: 0 8px 8px 0;">
+                            <i class="fas fa-plus"></i>
+                          </button>
+                        </div>
+                      </div>
+                      {% else %}
+                      <div class="text-center">
+                        <span class="badge bg-secondary fs-6">{{ item.inventario.cantidad_encontrada or 0 }}</span>
+                      </div>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <span id="estado_{{ item.objeto.id }}" 
+                            class="badge bg-{{ item.inventario.color_estado }}">
+                        {% if item.inventario.cantidad_encontrada is none %}
+                          Pendiente
+                        {% elif item.inventario.cantidad_encontrada >= item.inventario.cantidad_esperada %}
+                          Completo
+                        {% else %}
+                          Faltante
+                        {% endif %}
+                      </span>
+                    </td>
+                    <td>
+                      {% if modo_edicion %}
+                      <input type="text" 
+                             class="form-control form-control-sm" 
+                             name="observaciones_{{ item.objeto.id }}" 
+                             value="{{ item.inventario.observaciones or '' }}"
+                             placeholder="Observaciones opcionales">
+                      {% else %}
+                      <span class="text-muted">{{ item.inventario.observaciones or '-' }}</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            
+            <!-- Área de acciones separadas -->
+            <div class="row mt-4">
+              <div class="col-12">
+                <div class="border-top pt-4">
+                  <div class="row">
+                    {% if modo_edicion %}
+                    <div class="col-md-6 mb-3">
+                      <div class="text-center">    
+                        <button type="submit" class="btn btn-primary btn-lg px-4 w-100">
+                          <i class="fas fa-save"></i> Guardar Inventario
+                        </button>
+                      </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                      <div class="text-center">
+                        <button type="button" onclick="descargarInventario()" class="btn btn-success btn-lg px-4 w-100">
+                          <i class="fas fa-file-pdf"></i> Descargar PDF
+                        </button>
+                      </div>
+                    </div>
+                    {% else %}
+                    <div class="col-12 mb-3">
+                      <div class="text-center">
+                        <button type="button" onclick="descargarInventario()" class="btn btn-success btn-lg px-4 me-3">
+                          <i class="fas fa-file-pdf"></i> Descargar PDF
+                        </button>
+                        <a href="{{ url_for('inventario.inventario_habitacion', habitacion_id=habitacion.id) }}" 
+                           class="btn btn-warning btn-lg px-4">
+                          <i class="fas fa-edit"></i> Editar Inventario
+                        </a>
+                      </div>
+                    </div>
+                    {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% if modo_edicion %}
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% else %}
+      <div class="card">
+        <div class="card-body text-center">
+          <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+          <h5>Sin Objetos Definidos</h5>
+          <p class="text-muted mb-4">
+            Esta habitación no tiene objetos definidos para inventario.
+          </p>
+          <a href="{{ url_for('admin.hospedaje_index') }}" class="btn btn-primary">
+            <i class="fas fa-edit"></i> Editar Habitación
+          </a>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Agregar librería para PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+function cambiarCantidad(inputId, cambio) {
+    const input = document.getElementById(inputId);
+    let valorActual = parseInt(input.value) || 0;
+    let nuevoValor = Math.max(0, valorActual + cambio);
+    input.value = nuevoValor;
+    
+    // Disparar evento onchange para actualizar estado
+    input.dispatchEvent(new Event('change'));
+}
+
+function actualizarEstado(objetoId, cantidadEsperada) {
+    const input = document.getElementById(`cantidad_${objetoId}`);
+    const estadoSpan = document.getElementById(`estado_${objetoId}`);
+    const cantidadEncontrada = parseInt(input.value) || 0;
+    
+    // Remover clases anteriores
+    estadoSpan.classList.remove('bg-success', 'bg-danger', 'bg-warning');
+    
+    if (cantidadEncontrada >= cantidadEsperada) {
+        estadoSpan.classList.add('bg-success');
+        estadoSpan.textContent = 'Completo';
+        input.classList.remove('border-danger');
+        input.classList.add('border-success');
+    } else if (cantidadEncontrada === 0) {
+        estadoSpan.classList.add('bg-danger');
+        estadoSpan.textContent = 'Faltante';
+        input.classList.remove('border-success');
+        input.classList.add('border-danger');
+    } else {
+        estadoSpan.classList.add('bg-warning');
+        estadoSpan.textContent = 'Parcial';
+        input.classList.remove('border-success', 'border-danger');
+    }
+}
+
+function actualizarEstadoFromData(input) {
+    const objetoId = input.getAttribute('data-objeto-id');
+    const cantidadEsperada = parseInt(input.getAttribute('data-cantidad-esperada'));
+    actualizarEstado(objetoId, cantidadEsperada);
+}
+
+// Inicializar estados al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar estados para todos los inputs
+    document.querySelectorAll('input[data-objeto-id]').forEach(input => {
+        actualizarEstadoFromData(input);
+    });
+});
+
+// Confirmación antes de salir si hay cambios sin guardar
+let formularioModificado = false;
+document.querySelectorAll('input').forEach(input => {
+    input.addEventListener('change', () => {
+        formularioModificado = true;
+    });
+});
+
+window.addEventListener('beforeunload', function(e) {
+    if (formularioModificado) {
+        e.preventDefault();
+        e.returnValue = 'Tienes cambios sin guardar. ¿Estás seguro de que quieres salir?';
+    }
+});
+
+// Resetear flag cuando se envía el formulario
+document.querySelector('form').addEventListener('submit', () => {
+    formularioModificado = false;
+});
+
+// Función para descargar inventario en PDF
+function descargarInventario() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // Configuración del documento
+    const pageWidth = doc.internal.pageSize.width;
+    const margin = 20;
+    let yPosition = 30;
+    
+    // Título principal
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.text("INVENTARIO DE HABITACIÓN", pageWidth / 2, yPosition, { align: "center" });
+    
+    yPosition += 15;
+    
+    // Información de la habitación
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("{{ habitacion.nombre }}", pageWidth / 2, yPosition, { align: "center" });
+    
+    yPosition += 10;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("Fecha: {{ fecha_hoy.strftime('%d de %B de %Y') }}", margin, yPosition);
+    
+    yPosition += 8;
+    doc.text("Estado: {{ habitacion.estado }}", margin, yPosition);
+    doc.text("Cupo: {{ habitacion.cupo_personas }} personas", margin + 80, yPosition);
+    
+    yPosition += 8;
+    doc.text("Precio: ${{ '{:,.0f}'.format(habitacion.precio or 0) }}", margin, yPosition);
+    
+    yPosition += 15;
+    
+    // Preparar datos para la tabla
+    const tableData = [];
+    const headers = [['Objeto', 'Categoría', 'Esperado', 'Encontrado', 'Estado', 'Observaciones']];
+    
+    // Recopilar datos de todos los objetos
+    document.querySelectorAll('input[data-objeto-id]').forEach(input => {
+        const objetoId = input.getAttribute('data-objeto-id');
+        const cantidadEsperada = input.getAttribute('data-cantidad-esperada');
+        const cantidadEncontrada = input.value;
+        const observaciones = document.querySelector(`input[name="observaciones_${objetoId}"]`).value;
+        
+        // Obtener nombre del objeto desde la tabla
+        const fila = input.closest('tr');
+        const nombreObjeto = fila.querySelector('td strong').textContent;
+        const categoria = fila.querySelector('td small') ? fila.querySelector('td small').textContent : 'Sin categoría';
+        
+        // Determinar estado
+        let estado = 'Pendiente';
+        if (parseInt(cantidadEncontrada) >= parseInt(cantidadEsperada)) {
+            estado = 'Completo';
+        } else if (parseInt(cantidadEncontrada) > 0) {
+            estado = 'Parcial';
+        } else if (parseInt(cantidadEncontrada) === 0) {
+            estado = 'Faltante';
+        }
+        
+        tableData.push([
+            nombreObjeto,
+            categoria,
+            cantidadEsperada,
+            cantidadEncontrada,
+            estado,
+            observaciones || 'Sin observaciones'
+        ]);
+    });
+    
+    // Agregar tabla al PDF
+    doc.autoTable({
+        head: headers,
+        body: tableData,
+        startY: yPosition,
+        margin: { left: margin, right: margin },
+        styles: {
+            fontSize: 9,
+            cellPadding: 3,
+        },
+        headStyles: {
+            fillColor: [41, 128, 185],
+            textColor: 255,
+            fontStyle: 'bold'
+        },
+        columnStyles: {
+            0: { cellWidth: 35 }, // Objeto
+            1: { cellWidth: 25 }, // Categoría  
+            2: { cellWidth: 20 }, // Esperado
+            3: { cellWidth: 20 }, // Encontrado
+            4: { cellWidth: 20 }, // Estado
+            5: { cellWidth: 50 }  // Observaciones
+        },
+        didParseCell: function(data) {
+            // Colorear según el estado
+            if (data.column.index === 4 && data.section === 'body') {
+                const estado = data.cell.text[0];
+                if (estado === 'Completo') {
+                    data.cell.styles.fillColor = [46, 204, 113];
+                    data.cell.styles.textColor = 255;
+                } else if (estado === 'Faltante') {
+                    data.cell.styles.fillColor = [231, 76, 60];
+                    data.cell.styles.textColor = 255;
+                } else if (estado === 'Parcial') {
+                    data.cell.styles.fillColor = [241, 196, 15];
+                    data.cell.styles.textColor = 0;
+                }
+            }
+        }
+    });
+    
+    // Agregar footer
+    const finalY = doc.lastAutoTable.finalY + 20;
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "italic");
+    doc.text("Generado por Hotel Isla Encanto - Sistema de Inventario", pageWidth / 2, finalY, { align: "center" });
+    doc.text("Fecha de generación: " + new Date().toLocaleString(), pageWidth / 2, finalY + 8, { align: "center" });
+    
+    // Descargar el PDF
+    const fileName = `inventario_{{ habitacion.nombre|replace(' ', '_') }}_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
+}
+</script>
+
+{% endblock %}

@@ -12,8 +12,10 @@ class NuevaHabitacion(db.Model):
     estado = db.Column(db.String(20), nullable=False, default="Disponible")
     cupo_personas = db.Column(db.Integer, nullable=False, default=1)
     imagen = db.Column(db.String(255), nullable=True)  # Ruta de la imagen
+    objetos_incluidos = db.Column(db.Text, nullable=True)  # Lista de objetos incluidos (secador, plancha, mini bar, etc.)
     
-    huespedes = db.relationship('Huesped', backref='habitacion', lazy=True, cascade="all, delete")
+    # Ahora la relación apunta a ReservaHuesped (modelo unificado)
+    huespedes = db.relationship("ReservaHuesped", backref="habitacion", lazy=True)
 
     def __repr__(self):
         return f"<nuevaHabitacion {self.nombre} - {self.estado}>"

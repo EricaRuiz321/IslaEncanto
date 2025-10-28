@@ -1,5 +1,4 @@
 {% extends 'usuario/base.html' %}
-
 {% block content %}
 <br>
 <div class="container mt-5">
@@ -40,17 +39,17 @@
             <!-- Botones -->
             <div class="text-center mt-2">
               <!-- Leer más -->
-              <button class="btn btn-outline-primary btn-sm me-2"
+              <button type="button" class="btn btn-outline-primary btn-sm me-2"
                       data-bs-toggle="modal"
                       data-bs-target="#modalHabitacion{{ h.id }}">
                 Leer más
               </button>
 
-              <!-- Reservar -->
+              <!-- Reservar (un único formulario modal: ReservaHuesped) -->
               {% if h.estado == 'Disponible' %}
-              <button class="btn btn-success btn-sm"
+              <button type="button" class="btn btn-success btn-sm"
                       data-bs-toggle="modal"
-                      data-bs-target="#formReserva{{ h.id }}">
+                      data-bs-target="#ReservaHuesped{{ h.id }}">
                 Reservar
               </button>
               {% endif %}
@@ -59,7 +58,7 @@
         </div>
       </div>
 
-      <!-- Modal Leer más -->
+      <!-- Modal Leer más (sin cambios) -->
       <div class="modal fade" id="modalHabitacion{{ h.id }}" tabindex="-1"
            aria-labelledby="modalHabitacionLabel{{ h.id }}" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -71,8 +70,18 @@
             <div class="modal-body">
               <div class="row">
                 <div class="col-md-5">
+                  {# 3D viewer (model-viewer) with image fallback #}
+                  <model-viewer id="viewer-{{ h.id }}" class="w-100 rounded shadow-sm"
+                                style="height:260px; background:#f4f6fb; display:none;"
+                                exposure="1"
+                                camera-controls
+                                auto-rotate
+                                interaction-prompt="auto"
+                                poster="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}">
+                  </model-viewer>
+
                   <img src="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}"
-                       class="img-fluid rounded shadow-sm" alt="{{ h.nombre }}">
+                       class="img-fluid rounded shadow-sm modal-image" alt="{{ h.nombre }}" style="object-fit:cover;">
                 </div>
                 <div class="col-md-7">
                   <p><strong>Cupo:</strong> {{ h.cupo_personas }}</p>
@@ -93,48 +102,86 @@
         </div>
       </div>
 
-      <!-- FORMULARIO RESERVA -->
-      <div class="modal fade" id="formReserva{{ h.id }}" tabindex="-1"
-           aria-labelledby="formReservaLabel{{ h.id }}" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
+      <!-- Modal único: ReservaHuesped -->
+      <div class="modal fade" id="ReservaHuesped{{ h.id }}" tabindex="-1"
+           aria-labelledby="ReservaHuespedLabel{{ h.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title" id="formReservaLabel{{ h.id }}">Reservar {{ h.nombre }}</h5>
+              <h5 class="modal-title" id="ReservaHuespedLabel{{ h.id }}">Reserva / Datos Personales - {{ h.nombre }}</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
 
             <div class="modal-body">
-              <form method="POST" action="{{ url_for('habitacionHuesped.reservar_habitacion') }}">
+              <form id="formReservaHuesped{{ h.id }}" method="POST" action="{{ url_for('reservahuesped.reservar_con_huespedes') }}">
                 <input type="hidden" name="habitacion_id" value="{{ h.id }}">
+                <input type="hidden" name="precio" value="{{ h.precio }}">
 
-                <div class="mb-3">
-                  <label class="form-label">Nombre habitación</label>
-                  <input type="text" class="form-control" name="nombre" value="{{ h.nombre }}" readonly>
+                <!-- Sección: Datos Personales (primer huésped visible por defecto) -->
+                <div id="huespedes-container-{{ h.id }}">
+                  <div class="huesped-item border rounded p-3 mb-3">
+                    <h6>Huésped 1</h6>
+                    <div class="row g-2">
+                      <div class="col-md-4">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" class="form-control" name="nombre[]" required>
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-label">Tipo Documento</label>
+                        <select class="form-select" name="tipoDocumento[]">
+                          <option value="Cédula de Ciudadanía" selected>Cédula de Ciudadanía</option>
+                          <option value="Tarjeta de Identidad">Tarjeta de Identidad</option>
+                          <option value="Cédula de Extranjería">Cédula de Extranjería</option>
+                          <option value="Otro">Otro</option>
+                        </select>
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label">Número Documento</label>
+                        <input type="text" class="form-control" name="numeroDocumento[]" required>
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label">Procedencia</label>
+                        <input type="text" class="form-control" name="procedencia[]">
+                      </div>
+                      <div class="col-md-4 mt-2">
+                        <label class="form-label">Teléfono</label>
+                        <input type="text" class="form-control" name="telefono[]">
+                      </div>
+                      <div class="col-md-8 mt-2">
+                        <label class="form-label">Correo</label>
+                        <input type="email" class="form-control" name="correo[]">
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div class="mb-3">
-                  <label class="form-label">Precio</label>
-                  <input type="text" class="form-control" name="precio" value="{{ h.precio }}" readonly>
+                <div class="d-flex gap-2 mb-3">
+                  <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addHuesped({{ h.id }}, {{ h.cupo_personas }})">
+                    + Añadir huésped
+                  </button>
+                  <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeHuesped({{ h.id }})">
+                    - Quitar último
+                  </button>
                 </div>
 
-                <div class="mb-3">
-                  <label class="form-label">Cantidad de Personas</label>
-                  <input type="number" class="form-control" name="cantidad_personas"
-                         min="1" max="{{ h.cupo_personas }}"
-                         placeholder="Máximo {{ h.cupo_personas }}"
-                         required>
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label">Check-in (Hoy)</label>
-                  <input type="date" class="form-control" name="check_in"
-                         value="{{ current_date }}" readonly>
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label">Check-out</label>
-                  <input type="date" class="form-control" name="check_out"
-                         min="{{ current_date }}" required>
+                <!-- Fechas (check-in / check-out) -->
+                <div class="row g-2 align-items-end mb-3">
+                  <div class="col-md-4">
+                    <label class="form-label">Check-in</label>
+                    <input type="date" class="form-control" name="check_in" value="{{ current_date }}" required>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Check-out</label>
+                    <input type="date" class="form-control" name="check_out" min="{{ current_date }}" required>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Resumen</label>
+                    <div class="p-2 border rounded" id="resumen-{{ h.id }}">
+                      <small>Huéspedes: <span class="count-huespedes">1</span></small><br>
+                      <small>Días: <span class="count-dias">0</span></small><br>
+                      <small>Total estimado: <strong>$<span class="total-estimado">0</span></strong></small>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="text-end">
@@ -146,100 +193,194 @@
         </div>
       </div>
 
-      <!-- FORMULARIO DATOS PERSONALES -->
-      <div class="modal fade" id="formDatosPersonales{{ h.id }}" tabindex="-1"
-           aria-labelledby="formDatosPersonalesLabel{{ h.id }}" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="formDatosPersonalesLabel{{ h.id }}">Datos Personales</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-            </div>
-            <div class="modal-body">
-              <form method="POST" action="{{ url_for('huesped.guardar_huesped') }}">
-                <input type="hidden" name="habitacion_id" value="{{ h.id }}">
-
-                <div class="mb-3">
-                  <label class="form-label">Habitación</label>
-                  <input type="text" class="form-control" name="habitacion_nombre"
-                         value="{{ h.nombre }}" readonly>
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label">Nombre</label>
-                  <input type="text" class="form-control" name="nombre" required>
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label">Tipo de Documento</label>
-                  <select class="form-select" name="tipoDocumento" required>
-                    <option value="" selected disabled>Seleccione una opción</option>
-                    <option value="Cédula de Ciudadanía">Cédula de Ciudadanía</option>
-                    <option value="Tarjeta de Identidad">Tarjeta de Identidad</option>
-                    <option value="Cédula de Extranjería">Cédula de Extranjería</option>
-                    <option value="Otro">Otro</option>
-                  </select>
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label">Número Documento</label>
-                  <input type="text" class="form-control" name="numeroDocumento" required>
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label">Procedencia</label>
-                  <input type="text" class="form-control" name="procedencia" required>
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label">Teléfono</label>
-                  <input type="text" class="form-control" name="telefono" required>
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label">Correo</label>
-                  <input type="email" class="form-control" name="correo" required>
-                </div>
-
-                <div class="text-end">
-                  <button type="submit" class="btn btn-primary">Guardar Datos</button>
-                </div>
-
-                <input type="hidden" name="precio" value="{{ h.precio }}">
-                <input type="hidden" name="cantidad_personas" value="{{ h.cupo_personas }}">
-                <input type="hidden" name="check_in" value="{{ current_date }}">
-                <input type="hidden" name="check_out" value="{{ current_date }}">
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-
     {% endfor %}
   </div>
 </div>
 
+<!-- Modal Factura (reusable) -->
+<div class="modal fade" id="modalFactura" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content" id="factura-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Factura de Reserva</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body" id="factura-html">
+        {% if invoice %}
+          <div id="invoice-area" class="p-3">
+            <div class="row mb-3">
+              <div class="col-8">
+                <h3 class="text-primary">Isla Encanto</h3>
+                <p class="mb-0">Hospedaje y Restaurante Isla Encanto</p>
+                <p class="mb-0">hola@islaencanto.example</p>
+                <p class="mb-0">NIT: 123.456.789-0</p>
+              </div>
+              <div class="col-4 text-end">
+                <h6 class="mb-1">FACTURA</h6>
+                <p class="mb-0"><strong>No:</strong> BV-{{ invoice.habitacion_id }}-{{ invoice.check_in }}</p>
+                <p class="mb-0"><strong>Fecha:</strong> {{ invoice.check_in }}</p>
+                <p class="mb-0"><strong>Hora:</strong> {{ invoice.get('hora','') }}</p>
+              </div>
+            </div>
+
+            <div class="row border rounded p-3 mb-3">
+              <div class="col-6">
+                <h6>DATOS DEL CLIENTE</h6>
+                {% set cliente = invoice.huespedes[0] if invoice.huespedes and invoice.huespedes|length>0 else {} %}
+                <p class="mb-0"><strong>Nombre:</strong> {{ cliente.nombre or 'N/A' }}</p>
+                <p class="mb-0"><strong>N.Documento:</strong> {{ cliente.numeroDocumento or 'N/A' }}</p>
+                <p class="mb-0"><strong>Tel:</strong> {{ cliente.telefono or 'N/A' }}</p>
+              </div>
+              <div class="col-6">
+                <h6>DETALLE DE LA RESERVA</h6>
+                <p class="mb-0"><strong>Habitación:</strong> {{ invoice.habitacion_nombre }} (ID {{ invoice.habitacion_id }})</p>
+                <p class="mb-0"><strong>Check-in:</strong> {{ invoice.check_in }}</p>
+                <p class="mb-0"><strong>Check-out:</strong> {{ invoice.check_out }}</p>
+                <p class="mb-0"><strong>Días:</strong> {{ invoice.dias }}</p>
+              </div>
+            </div>
+
+            <div class="table-responsive mb-3">
+              <table class="table table-borderless">
+                <thead>
+                  <tr>
+                    <th>CANT.</th>
+                    <th>DETALLE</th>
+                    <th class="text-end">PRECIO UNIT.</th>
+                    <th class="text-end">SUBTOTAL</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>1</td>
+                    <td>{{ invoice.habitacion_nombre }}</td>
+                    <td class="text-end">${{ '{:,.0f}'.format(invoice.precio) }}</td>
+                    <td class="text-end">${{ '{:,.0f}'.format(invoice.precio * invoice.dias) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="d-flex justify-content-end">
+              <div class="w-50">
+                <div class="d-flex justify-content-between border-top pt-2">
+                  <div><strong>Total a pagar</strong></div>
+                  <div><strong>${{ '{:,.0f}'.format(invoice.total) }} COP</strong></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        {% else %}
+          <div id="invoice-area" class="p-3">
+            <p>No hay factura disponible.</p>
+          </div>
+        {% endif %}
+      </div>
+      <div class="modal-footer">
+        <button id="download-invoice" type="button" class="btn btn-primary">Descargar PDF</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Incluir html2pdf para descarga en el cliente -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
 
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-  const habitacionId = "{{ habitacion_id or '' }}";
-  const abrir = "{{ abrir or '' }}";
+function addHuesped(habitacionId, maxCupo) {
+  const container = document.getElementById(`huespedes-container-${habitacionId}`);
+  const current = container.querySelectorAll('.huesped-item').length;
+  if (current >= maxCupo) return;
+  const index = current + 1;
+  const div = document.createElement('div');
+  div.className = 'huesped-item border rounded p-3 mb-3';
+  div.innerHTML = `
+    <h6>Huésped ${index}</h6>
+    <div class="row g-2">
+      <div class="col-md-4"><label class="form-label">Nombre</label><input type="text" class="form-control" name="nombre[]" required></div>
+      <div class="col-md-2"><label class="form-label">Tipo Documento</label>
+        <select class="form-select" name="tipoDocumento[]">
+          <option value="Cédula de Ciudadanía" selected>Cédula</option>
+          <option value="Tarjeta de Identidad">Tarjeta</option>
+          <option value="Cédula de Extranjería">Extranjería</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+      <div class="col-md-3"><label class="form-label">Número Documento</label><input type="text" class="form-control" name="numeroDocumento[]" required></div>
+      <div class="col-md-3"><label class="form-label">Procedencia</label><input type="text" class="form-control" name="procedencia[]"></div>
+      <div class="col-md-4 mt-2"><label class="form-label">Teléfono</label><input type="text" class="form-control" name="telefono[]"></div>
+      <div class="col-md-8 mt-2"><label class="form-label">Correo</label><input type="email" class="form-control" name="correo[]"></div>
+    </div>`;
+  container.appendChild(div);
+  updateResumenForms(container);
+}
 
-  if (habitacionId) {
-    let modalId = '';
+function removeHuesped(habitacionId) {
+  const container = document.getElementById(`huespedes-container-${habitacionId}`);
+  const items = container.querySelectorAll('.huesped-item');
+  if (items.length <= 1) return;
+  container.removeChild(items[items.length - 1]);
+  updateResumenForms(container);
+}
 
-    if (abrir === 'reserva') {
-      modalId = `formReserva${habitacionId}`;
-    } else if (abrir === 'datos') {
-      modalId = `formDatosPersonales${habitacionId}`;
-    }
+function updateResumenForms(container) {
+  const modal = container.closest('.modal');
+  const habitacionId = modal ? modal.id.replace('ReservaHuesped','') : null;
+  const count = container.querySelectorAll('.huesped-item').length;
+  const resumen = document.querySelector(`#resumen-${habitacionId}`);
+  if (resumen) resumen.querySelector('.count-huespedes').textContent = count;
 
-    const modalElement = document.getElementById(modalId);
-    if (modalElement) {
-      const modal = new bootstrap.Modal(modalElement);
-      modal.show();
+  // Calcular días y total estimado si existen inputs
+  const checkInInput = modal.querySelector('input[name="check_in"]');
+  const checkOutInput = modal.querySelector('input[name="check_out"]');
+  const precio = parseFloat(modal.querySelector('input[name="precio"]').value || 0);
+
+  let dias = 0;
+  if (checkInInput && checkOutInput && checkInInput.value && checkOutInput.value) {
+    const d1 = new Date(checkInInput.value);
+    const d2 = new Date(checkOutInput.value);
+    dias = Math.max(1, Math.ceil((d2 - d1) / (1000*60*60*24)));
+  }
+  if (resumen) resumen.querySelector('.count-dias').textContent = dias;
+  if (resumen) resumen.querySelector('.total-estimado').textContent = Intl.NumberFormat('es-CO').format(precio * dias * count);
+}
+
+document.addEventListener('input', function(e) {
+  // cuando cambian fechas dentro de cualquier modal de reserva, actualizar resumen
+  if (e.target && (e.target.name === 'check_in' || e.target.name === 'check_out')) {
+    const modal = e.target.closest('.modal');
+    if (modal) {
+      const container = modal.querySelector('[id^="huespedes-container-"]');
+      if (container) updateResumenForms(container);
     }
   }
+});
+
+// Descarga de factura a PDF
+document.getElementById('download-invoice')?.addEventListener('click', function() {
+  const element = document.getElementById('invoice-area');
+  if (!element) return;
+  const opt = { margin: 0.5, filename: 'factura_reserva.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
+  html2pdf().set(opt).from(element).save();
+});
+
+// Si el backend envía invoice y show_invoice, abrir modal al cargar
+document.addEventListener("DOMContentLoaded", function() {
+  {% if show_invoice %}
+    var invModal = new bootstrap.Modal(document.getElementById('modalFactura'));
+    invModal.show();
+  {% endif %}
+});
+
+// Cada vez que se abre un modal de Reserva, actualizar resumen inicial
+var reservaModals = document.querySelectorAll('[id^="ReservaHuesped"]');
+reservaModals.forEach(function(m) {
+  m.addEventListener('show.bs.modal', function () {
+    const container = m.querySelector('[id^="huespedes-container-"]');
+    updateResumenForms(container);
+  });
 });
 </script>
 

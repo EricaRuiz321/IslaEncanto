@@ -2,7 +2,6 @@
 
 {% block content %}
 <div class="container mt-5">
-    <h2>Reserva de Habitación</h2>
 
     <!-- Datos de la Habitación -->
     <form method="POST" action="{{ url_for('habitacion.reservar_habitacion', habitacion_id=habitacion.id) }}">

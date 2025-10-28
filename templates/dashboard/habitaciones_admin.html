@@ -40,7 +40,7 @@
           <!-- Botones de acción -->
           <div class="text-center mt-2">
             <!-- Especificaciones -->
-            <button class="btn btn-outline-primary btn-sm mb-1"
+            <button type="button" class="btn btn-outline-primary"
                     data-bs-toggle="modal"
                     data-bs-target="#detalleHabitacion{{ h.id }}">
               <i class="bi bi-info-circle me-1"></i> Especificaciones
@@ -68,135 +68,180 @@
           </div>
         </div>
 
-        <!-- Modal Especificaciones -->
-        <div class="modal fade" id="detalleHabitacion{{ h.id }}" tabindex="-1">
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">{{ h.nombre }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-              </div>
-              <div class="modal-body">
-                <p><strong>Cupo:</strong> {{ h.cupo_personas }}</p>
-                <p><strong>Precio:</strong> ${{ '{:,.0f}'.format(h.precio) }} COP</p>
-                <p><strong>Estado:</strong> {{ h.estado }}</p>
-                <p><strong>Descripción:</strong> {{ h.descripcion or 'Sin descripción' }}</p>
-
-                <div class="d-flex justify-content-end mt-3">
-                  <!-- Editar -->
-                  <button type="button" class="btn btn-primary btn-sm me-2"
-                          data-bs-toggle="modal"
-                          data-bs-target="#modalEditar{{ h.id }}">
-                    Editar
-                  </button>
-
-                  <!-- Eliminar -->
-                  <form action="{{ url_for('admin.hospedaje_eliminar', habitacion_id=h.id) }}"
-                        method="POST" style="display:inline;">
-                    <button type="submit" class="btn btn-danger btn-sm"
-                            onclick="return confirm('¿Seguro que deseas eliminar esta habitación?')">
-                      Eliminar
-                    </button>
-                  </form>
-                </div>
-              </div>
-            </div>
+        <!-- Modals moved to the end of the template to avoid nested modal issues -->
+      </div>
+    </div>
+    {% endfor %}
+  
+  {# Render modals for habitaciones fuera del loop para evitar problemas de nested modals #}
+  {% for h in habitaciones %}
+    <!-- Modal Especificaciones -->
+    <div class="modal fade" id="detalleHabitacion{{ h.id }}" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">{{ h.nombre }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
-        </div>
-
-        <!-- Modal Leer más -->
-        <div class="modal fade" id="modalHabitacion{{ h.id }}" tabindex="-1"
-             aria-labelledby="modalHabitacionLabel{{ h.id }}" aria-hidden="true">
-          <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title" id="modalHabitacionLabel{{ h.id }}">{{ h.nombre }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-              </div>
-              <div class="modal-body">
-                <div class="row">
-                  <!-- Imagen izquierda -->
-                  <div class="col-md-5">
-                    <img src="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}"
-                         class="img-fluid rounded shadow-sm" alt="{{ h.nombre }}">
-                  </div>
-                  <!-- Datos derecha -->
-                  <div class="col-md-7">
-                    <p><strong>Cupo:</strong> {{ h.cupo_personas }}</p>
-                    <p><strong>Precio:</strong> ${{ '{:,.0f}'.format(h.precio) }} COP</p>
-                    <p><strong>Estado:</strong> {{ h.estado }}</p>
-                    {% if h.descripcion %}
-                      <p><strong>Descripción:</strong> {{ h.descripcion }}</p>
-                    {% else %}
-                      <p><strong>Descripción:</strong> <span class="text-muted">Sin descripción</span></p>
-                    {% endif %}
-                  </div>
-                </div>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Modal Editar -->
-        <div class="modal fade" id="modalEditar{{ h.id }}" tabindex="-1"
-             aria-labelledby="modalEditarLabel{{ h.id }}" aria-hidden="true">
-          <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-              <form action="{{ url_for('admin.hospedaje_editar', habitacion_id=h.id) }}"
-                    method="POST" enctype="multipart/form-data">
-                <div class="modal-header">
-                  <h5 class="modal-title" id="modalEditarLabel{{ h.id }}">Editar {{ h.nombre }}</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">
-                  <div class="row">
-                    <div class="col-md-6">
-                      <label class="form-label">Nombre</label>
-                      <input type="text" class="form-control" name="nombre" value="{{ h.nombre }}" required>
-                    </div>
-                    <div class="col-md-6">
-                      <label class="form-label">Precio</label>
-                      <input type="number" class="form-control" name="precio" value="{{ h.precio }}" required>
-                    </div>
-                    <div class="col-md-6 mt-3">
-                      <label class="form-label">Cupo Personas</label>
-                      <input type="number" class="form-control" name="cupo_personas" value="{{ h.cupo_personas }}" required>
-                    </div>
-                    <div class="col-md-6 mt-3">
-                      <label class="form-label">Estado</label>
-                      <select class="form-select" name="estado">
-                        <option value="Disponible" {% if h.estado == "Disponible" %}selected{% endif %}>Disponible</option>
-                        <option value="Mantenimiento" {% if h.estado == "Mantenimiento" %}selected{% endif %}>Mantenimiento</option>
-                        <option value="Ocupada" {% if h.estado == "Ocupada" %}selected{% endif %}>Ocupada</option>
-                      </select>
-                    </div>
-                    <div class="col-md-12 mt-3">
-                      <label class="form-label">Descripción</label>
-                      <textarea class="form-control" name="descripcion" rows="3" required>{{ h.descripcion }}</textarea>
-                    </div>
-                    <div class="col-md-12 mt-3">
-                      <label class="form-label">Imagen</label>
-                      <input type="file" class="form-control" name="imagen" accept="image/*">
-                      {% if h.imagen %}
-                        <small class="text-muted">Actual: {{ h.imagen }}</small>
-                      {% endif %}
-                    </div>
-                  </div>
-                </div>
-                <div class="modal-footer">
-                  <button type="submit" class="btn btn-primary">Guardar cambios</button>
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                </div>
-              </form>
-            </div>
+          <div class="modal-body">
+            <p><strong>Cupo:</strong> {{ h.cupo_personas }}</p>
+            <p><strong>Precio:</strong> ${{ '{:,.0f}'.format(h.precio) }} COP</p>
+            <p><strong>Estado:</strong> {{ h.estado }}</p>
+            <p><strong>Descripción:</strong> {{ h.descripcion or 'Sin descripción' }}</p>
+            {% if h.objetos_incluidos %}
+            <p><strong>Objetos Incluidos:</strong> {{ h.objetos_incluidos }}</p>
+            {% else %}
+            <p><strong>Objetos Incluidos:</strong> <span class="text-muted">No especificados</span></p>
+            {% endif %}
           </div>
         </div>
       </div>
     </div>
-    {% endfor %}
+
+    <!-- Modal Leer más -->
+    <div class="modal fade" id="modalHabitacion{{ h.id }}" tabindex="-1"
+         aria-labelledby="modalHabitacionLabel{{ h.id }}" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalHabitacionLabel{{ h.id }}">{{ h.nombre }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <!-- Imagen izquierda -->
+              <div class="col-md-5">
+                <img src="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}"
+                     class="img-fluid rounded shadow-sm" alt="{{ h.nombre }}">
+              </div>
+              <!-- Datos derecha -->
+              <div class="col-md-7">
+                <p><strong>Cupo:</strong> {{ h.cupo_personas }}</p>
+                <p><strong>Precio:</strong> ${{ '{:,.0f}'.format(h.precio) }} COP</p>
+                <p><strong>Estado:</strong> {{ h.estado }}</p>
+                {% if h.descripcion %}
+                  <p><strong>Descripción:</strong> {{ h.descripcion }}</p>
+                {% else %}
+                  <p><strong>Descripción:</strong> <span class="text-muted">Sin descripción</span></p>
+                {% endif %}
+                {% if h.objetos_incluidos %}
+                  <p><strong>Objetos Incluidos:</strong> {{ h.objetos_incluidos }}</p>
+                {% else %}
+                  <p><strong>Objetos Incluidos:</strong> <span class="text-muted">No especificados</span></p>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Editar -->
+    <div class="modal fade" id="modalEditar{{ h.id }}" tabindex="-1"
+         aria-labelledby="modalEditarLabel{{ h.id }}" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <form action="{{ url_for('admin.hospedaje_editar', habitacion_id=h.id) }}"
+                method="POST" enctype="multipart/form-data">
+            <div class="modal-header">
+              <h5 class="modal-title" id="modalEditarLabel{{ h.id }}">Editar {{ h.nombre }}</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <label class="form-label">Nombre</label>
+                  <input type="text" class="form-control" name="nombre" value="{{ h.nombre }}" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Precio</label>
+                  <input type="number" class="form-control" name="precio" value="{{ h.precio }}" required>
+                </div>
+                <div class="col-md-6 mt-3">
+                  <label class="form-label">Cupo Personas</label>
+                  <input type="number" class="form-control" name="cupo_personas" value="{{ h.cupo_personas }}" required>
+                </div>
+                <div class="col-md-6 mt-3">
+                  <label class="form-label">Estado</label>
+                  <select class="form-select" name="estado">
+                    <option value="Disponible" {% if h.estado == "Disponible" %}selected{% endif %}>Disponible</option>
+                    <option value="Mantenimiento" {% if h.estado == "Mantenimiento" %}selected{% endif %}>Mantenimiento</option>
+                    <option value="Ocupada" {% if h.estado == "Ocupada" %}selected{% endif %}>Ocupada</option>
+                  </select>
+                </div>
+                <div class="col-md-12 mt-3">
+                  <label class="form-label">Descripción</label>
+                  <textarea class="form-control" name="descripcion" rows="3" required>{{ h.descripcion }}</textarea>
+                </div>
+                <div class="col-md-12 mt-3">
+                  <label class="form-label">Objetos Incluidos</label>
+                  
+                  <!-- Selector de objetos disponibles -->
+                  <div class="row mb-2">
+                    <div class="col-md-8">
+                      <select class="form-select" id="selectObjetoEdit{{ h.id }}">
+                        <option value="">Seleccionar objeto...</option>
+                        {% for objeto in objetos_disponibles %}
+                        <option value="{{ objeto.nombre }}">{{ objeto.nombre }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <button type="button" class="btn btn-outline-success btn-sm" 
+                              data-habitacion-id="{{ h.id }}"
+                              onclick="agregarObjetoDesdeSelectEditFromData(this)">
+                        <i class="fas fa-plus"></i> Añadir
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <!-- Lista de objetos seleccionados -->
+                  <div class="mb-3">
+                    <label class="form-label">Objetos seleccionados:</label>
+                    <div id="objetosSeleccionadosEdit{{ h.id }}" class="d-flex flex-wrap gap-2">
+                      {% if h.objetos_incluidos %}
+                        {% for objeto in h.objetos_incluidos.split(',') %}
+                          {% if objeto.strip() %}
+                          <span class="badge bg-primary">
+                            {{ objeto.strip() }}
+                            <button type="button" class="btn-close btn-close-white ms-1" 
+                                    data-habitacion-id="{{ h.id }}" 
+                                    data-objeto-nombre="{{ objeto.strip() }}"
+                                    onclick="removerObjetoEditFromData(this)" 
+                                    style="font-size: 0.7em;"></button>
+                          </span>
+                          {% endif %}
+                        {% endfor %}
+                      {% endif %}
+                    </div>
+                  </div>
+                  
+                  <!-- Campo oculto para enviar los datos -->
+                  <input type="hidden" id="objetos_incluidosEdit{{ h.id }}" name="objetos_incluidos" value="{{ h.objetos_incluidos or '' }}">
+                  
+                
+                </div>
+                <div class="col-md-12 mt-3">
+                  <label class="form-label">Imagen</label>
+                  <input type="file" class="form-control" name="imagen" accept="image/*">
+                  {% if h.imagen %}
+                    <small class="text-muted">Actual: {{ h.imagen }}</small>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-primary">Guardar cambios</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
 
     <!-- Modal Agregar Nueva Habitación -->
     <div class="modal fade" id="modalNuevaHabitacion" tabindex="-1"
@@ -239,6 +284,45 @@
                   <label for="descripcion" class="form-label">Descripción</label>
                   <textarea class="form-control" id="descripcion" name="descripcion" rows="3" required></textarea>
                 </div>
+                <div class="col-md-12">
+                  <label class="form-label">Objetos Incluidos</label>
+                  
+                  <!-- Selector de objetos disponibles -->
+                  <div class="row mb-3">
+                    <div class="col-md-6">
+                      <label class="form-label">Objeto</label>
+                      <select class="form-select" id="selectObjeto">
+                        <option value="">Seleccionar objeto...</option>
+                        {% for objeto in objetos_disponibles %}
+                        <option value="{{ objeto.nombre }}">{{ objeto.nombre }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label">Cantidad</label>
+                      <input type="number" class="form-control" id="cantidadObjeto" min="1" value="1" placeholder="1">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                      <button type="button" class="btn btn-outline-success w-100" onclick="agregarObjetoConCantidad()">
+                        <i class="fas fa-plus"></i> Añadir
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <!-- Lista de objetos seleccionados -->
+                  <div class="mb-3">
+                    <label class="form-label">Objetos seleccionados:</label>
+                    <div id="objetosSeleccionados" class="border rounded p-3 min-height-80" style="min-height: 80px; background-color: #f8f9fa;">
+                      <p class="text-muted mb-0" id="textoSinObjetos">
+                        <i class="fas fa-info-circle"></i> Selecciona objetos arriba para añadirlos aquí
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <!-- Campo oculto para enviar los datos -->
+                  <input type="hidden" id="objetos_incluidos" name="objetos_incluidos" value="">
+                  
+                </div>
               </div>
               <div class="d-flex justify-content-center mt-4">
                 <button type="submit" class="btn btn-main px-5">Agregar Habitación</button>
@@ -251,4 +335,173 @@
     
   </div>
 </div>
+
+<script>
+// Array para almacenar objetos seleccionados para nueva habitación
+let objetosSeleccionados = [];
+
+// Función para agregar objeto desde el select
+// Array mejorado para almacenar objetos con cantidades
+let objetosConCantidad = [];
+
+function agregarObjetoConCantidad() {
+    const select = document.getElementById('selectObjeto');
+    const cantidadInput = document.getElementById('cantidadObjeto');
+    const objeto = select.value.trim();
+    const cantidad = parseInt(cantidadInput.value) || 1;
+    
+    if (objeto) {
+        // Verificar si el objeto ya existe
+        const existeIndex = objetosConCantidad.findIndex(item => item.nombre === objeto);
+        
+        if (existeIndex !== -1) {
+            // Si existe, sumar la cantidad
+            objetosConCantidad[existeIndex].cantidad += cantidad;
+        } else {
+            // Si no existe, agregarlo
+            objetosConCantidad.push({
+                nombre: objeto,
+                cantidad: cantidad
+            });
+        }
+        
+        actualizarVistaObjetosConCantidad();
+        select.value = '';
+        cantidadInput.value = '1';
+    }
+}
+
+// Función para remover objeto completamente
+function removerObjetoCompleto(nombreObjeto) {
+    objetosConCantidad = objetosConCantidad.filter(item => item.nombre !== nombreObjeto);
+    actualizarVistaObjetosConCantidad();
+}
+
+// Función para modificar cantidad de un objeto
+function modificarCantidad(nombreObjeto, nuevaCantidad) {
+    const index = objetosConCantidad.findIndex(item => item.nombre === nombreObjeto);
+    if (index !== -1) {
+        if (nuevaCantidad <= 0) {
+            removerObjetoCompleto(nombreObjeto);
+        } else {
+            objetosConCantidad[index].cantidad = nuevaCantidad;
+            actualizarVistaObjetosConCantidad();
+        }
+    }
+}
+
+// Función para actualizar la vista de objetos seleccionados con cantidades
+function actualizarVistaObjetosConCantidad() {
+    const container = document.getElementById('objetosSeleccionados');
+    const hiddenInput = document.getElementById('objetos_incluidos');
+    const textoSinObjetos = document.getElementById('textoSinObjetos');
+    
+    if (objetosConCantidad.length === 0) {
+        container.innerHTML = '<p class="text-muted mb-0" id="textoSinObjetos"><i class="fas fa-info-circle"></i> Selecciona objetos arriba para añadirlos aquí</p>';
+        hiddenInput.value = '';
+        return;
+    }
+    
+    // Ocultar texto de ayuda si existe
+    if (textoSinObjetos) {
+        textoSinObjetos.style.display = 'none';
+    }
+    
+    let html = '<div class="d-flex flex-wrap gap-2">';
+    
+    objetosConCantidad.forEach(item => {
+        html += `
+            <div class="border border-primary rounded-pill px-3 py-2 d-flex align-items-center gap-2" style="background-color: rgba(13, 110, 253, 0.1);">
+                <span style="color: #495057; font-weight: normal;">${item.nombre}</span>
+                <div class="d-flex align-items-center gap-1">
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-circle" style="width: 22px; height: 22px; padding: 0; font-size: 11px; line-height: 1;" 
+                            onclick="modificarCantidad('${item.nombre}', ${item.cantidad - 1})" title="Disminuir">-</button>
+                    <span class="mx-2" style="color: #495057; font-weight: normal; min-width: 20px; text-align: center;">${item.cantidad}</span>
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-circle" style="width: 22px; height: 22px; padding: 0; font-size: 11px; line-height: 1;" 
+                            onclick="modificarCantidad('${item.nombre}', ${item.cantidad + 1})" title="Aumentar">+</button>
+                </div>
+                <button type="button" class="btn-close" style="font-size: 10px; color: #6c757d;" 
+                        onclick="removerObjetoCompleto('${item.nombre}')" title="Eliminar"></button>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+    
+    // Actualizar campo oculto con formato: "objeto1:cantidad1,objeto2:cantidad2"
+    const objetosString = objetosConCantidad.map(item => `${item.nombre}:${item.cantidad}`).join(',');
+    hiddenInput.value = objetosString;
+}
+
+// Funciones para editar habitación
+function agregarObjetoDesdeSelectEdit(habitacionId) {
+    const select = document.getElementById(`selectObjetoEdit${habitacionId}`);
+    const objeto = select.value.trim();
+    
+    if (objeto) {
+        agregarObjetoEdit(habitacionId, objeto);
+        select.value = '';
+    }
+}
+
+function agregarObjetoDesdeSelectEditFromData(button) {
+    const habitacionId = button.getAttribute('data-habitacion-id');
+    agregarObjetoDesdeSelectEdit(habitacionId);
+}
+
+function removerObjetoEditFromData(button) {
+    const habitacionId = button.getAttribute('data-habitacion-id');
+    const objetoNombre = button.getAttribute('data-objeto-nombre');
+    removerObjetoEdit(habitacionId, objetoNombre);
+}
+
+function agregarObjetoEdit(habitacionId, objeto) {
+    const hiddenInput = document.getElementById(`objetos_incluidosEdit${habitacionId}`);
+    const currentValue = hiddenInput.value;
+    
+    // Obtener objetos actuales
+    let objetosActuales = currentValue ? currentValue.split(',').map(s => s.trim()).filter(s => s) : [];
+    
+    // Agregar si no existe
+    if (!objetosActuales.includes(objeto)) {
+        objetosActuales.push(objeto);
+        actualizarVistaObjetosEdit(habitacionId, objetosActuales);
+    }
+}
+
+function removerObjetoEdit(habitacionId, objeto) {
+    const hiddenInput = document.getElementById(`objetos_incluidosEdit${habitacionId}`);
+    const currentValue = hiddenInput.value;
+    
+    // Obtener objetos actuales y remover el especificado
+    let objetosActuales = currentValue ? currentValue.split(',').map(s => s.trim()).filter(s => s) : [];
+    objetosActuales = objetosActuales.filter(item => item !== objeto);
+    
+    actualizarVistaObjetosEdit(habitacionId, objetosActuales);
+}
+
+function actualizarVistaObjetosEdit(habitacionId, objetos) {
+    const container = document.getElementById(`objetosSeleccionadosEdit${habitacionId}`);
+    const hiddenInput = document.getElementById(`objetos_incluidosEdit${habitacionId}`);
+    
+    container.innerHTML = '';
+    
+    objetos.forEach(objeto => {
+        const badge = document.createElement('div');
+        badge.className = 'border border-primary rounded-pill px-3 py-1 d-flex align-items-center gap-2';
+        badge.style.backgroundColor = 'rgba(13, 110, 253, 0.1)';
+        badge.innerHTML = `
+            <span style="color: #495057; font-weight: normal;">${objeto}</span>
+            <button type="button" class="btn-close" onclick="removerObjetoEdit(${habitacionId}, '${objeto}')" 
+                    style="font-size: 10px; color: #6c757d;" title="Eliminar"></button>
+        `;
+        container.appendChild(badge);
+    });
+    
+    // Actualizar campo oculto
+    hiddenInput.value = objetos.join(', ');
+}
+</script>
+
 {% endblock %}

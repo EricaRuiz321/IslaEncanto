@@ -1,9 +1,9 @@
 from flask import Blueprint, render_template, url_for
 from datetime import date, timedelta
 from sqlalchemy import func, cast, Date
-from models.huesped import Huesped
+from models.reservahuesped import ReservaHuesped
 from models.usuario import Usuario
-from models.habitacionhuesped import HabitacionHuesped
+from models.reservahuesped import ReservaHuesped as HabitacionHuesped
 from models.estadisticasgenerales import EstadisticasGenerales
 from utils.extensions import db
 
@@ -17,18 +17,18 @@ def dashboard():
     total_huespedes = db.session.query(func.sum(HabitacionHuesped.cantidad_personas)).scalar() or 0
 
     # 🔹 Check-outs de hoy (comparando solo la fecha sin hora)
+    # Usar ReservaHuesped como fuente unificada para check-outs
     checkouts_hoy = (
-    db.session.query(
-        Huesped.nombre,
-        Huesped.numeroDocumento,
-        Huesped.telefono,
-        HabitacionHuesped.check_in,
-        HabitacionHuesped.check_out
+        db.session.query(
+            HabitacionHuesped.nombre,
+            HabitacionHuesped.numeroDocumento,
+            HabitacionHuesped.telefono,
+            HabitacionHuesped.check_in,
+            HabitacionHuesped.check_out
+        )
+        .filter(func.date(HabitacionHuesped.check_out) == hoy)
+        .all()
     )
-    .outerjoin(HabitacionHuesped, Huesped.habitacion_id == HabitacionHuesped.id)
-    .filter(func.date(HabitacionHuesped.check_out) == hoy)
-    .all()
-)
 
 
     check_out_hoy = len(checkouts_hoy)

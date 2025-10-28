@@ -30,15 +30,23 @@
                         <a class="nav-link" href="{{ url_for('main.restaurante_usuario') }}">Restaurante</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('nosotros') }}">Nosotros</a>
+                        <a class="nav-link" href="{{ url_for('main.nosotros_usuario') }}">Nosotros</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('main.experiencias_usuario') }}">Experiencias</a>
                     </li>
                 </ul>
-                <a href="{{ url_for('perfil_usuario.perfil') }}" class="btn btn-login">
-                <i class="bi bi-person-circle fs-4"></i>
-                </a>
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                    {% if is_authenticated %}
+                        <a href="{{ url_for('perfil_usuario.perfil') }}" class="btn btn-login">
+                            <i class="bi bi-person-circle fs-4"></i>
+                        </a>
+                    {% else %}
+                        <a href="{{ login_url }}" class="btn btn-login">
+                            <i class="bi bi-box-arrow-in-right fs-4"></i>
+                        </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </nav>

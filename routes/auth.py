@@ -4,6 +4,16 @@ from werkzeug.security import generate_password_hash
 
 auth_bp = Blueprint('auth', __name__)
 
+
+@auth_bp.route('/logout', methods=['POST'])
+def logout():
+    # Cerrar sesión del usuario (sesión basada en session)
+    session.pop('user', None)
+    session.pop('rol', None)
+    flash('Sesión cerrada correctamente.', 'info')
+    # Redirigir al home público
+    return redirect(url_for('home'))
+
 # ---------------- GOOGLE LOGIN ---------------- #
 
 @auth_bp.route('/google-login')
