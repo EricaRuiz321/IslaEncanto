@@ -106,6 +106,103 @@
 
 </div>
 
+  </div>
+
+</div>
+
+<!-- Botón flotante del carrito -->
+<button id="cartButton" class="btn btn-primary position-fixed" style="bottom: 20px; right: 20px; border-radius: 50%; width: 60px; height: 60px; z-index: 1000;">
+  🛒
+  <span id="cartFloatingCount" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+    0
+  </span>
+</button>
+
+<!-- Modal del carrito -->
+<div class="modal fade" id="cartModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Carrito de Compras</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="cart-items" class="list-group mb-3">
+          <!-- Los items del carrito se insertarán aquí dinámicamente -->
+        </div>
+        
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5>Subtotal: <span id="cartSubtotal">$0</span></h5>
+          <button id="clearCart" class="btn btn-outline-danger btn-sm">Limpiar carrito</button>
+        </div>
+
+        <!-- Información del cliente para generar factura -->
+        <div class="card">
+          <div class="card-header">
+            <h6 class="mb-0">Información para la reserva</h6>
+          </div>
+          <div class="card-body">
+            <div class="row g-2">
+              <div class="col-md-6">
+                <label class="form-label">Nombre</label>
+                <input id="cart_nombre" class="form-control" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Teléfono</label>
+                <input id="cart_telefono" class="form-control">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Número de documento</label>
+                <input id="cart_documento" class="form-control" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Mesa</label>
+                <select id="cart_mesa" class="form-select" required>
+                  <option value="" disabled selected>Seleccione mesa</option>
+                  {% for m in mesas %}
+                    <option value="{{ m.numeroMesa }}">Mesa {{ m.numeroMesa }} (Capacidad: {{ m.capacidad }})</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Fecha</label>
+                <input id="cart_fecha" type="date" class="form-control" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Hora</label>
+                <input id="cart_hora" type="time" class="form-control" required>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Continuar comprando</button>
+        <button id="generateCartInvoice" type="button" class="btn btn-success">Generar factura</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal factura del carrito -->
+<div class="modal fade" id="cartInvoiceModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Factura Generada</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="cart-invoice-body">
+        <!-- La factura se generará aquí dinámicamente -->
+      </div>
+      <div class="modal-footer">
+        <button id="download-cart-invoice" class="btn btn-primary">Descargar PDF</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Modal factura (igual que ya tienes, se muestra si backend envía invoice) -->
 <div class="modal fade" id="modalFactura" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -149,151 +246,366 @@
   </div>
 </div>
 
-<!-- html2pdf -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
 <script>
-// Cart logic (client-side, stored in localStorage under 'restCart')
-(function(){
-  const STORAGE_KEY = 'restCart';
-  const cartBtn = document.getElementById('cartButton');
+// Carrito funcional completo
+(function() {
+  'use strict';
+  
+  console.log('Inicializando carrito...');
+  
+  const STORAGE_KEY = 'restaurant_cart';
+  let cart = [];
+  
+  // Verificar que los elementos existan
+  console.log('Verificando elementos del DOM...');
+  
+  // Elementos del DOM
   const cartCount = document.getElementById('cartCount');
+  const cartFloatingCount = document.getElementById('cartFloatingCount');
+  const cartItems = document.getElementById('cart-items');
+  const cartSubtotal = document.getElementById('cartSubtotal');
   const cartModalEl = document.getElementById('cartModal');
+  
+  console.log('Elementos encontrados:', {
+    cartCount: !!cartCount,
+    cartFloatingCount: !!cartFloatingCount,
+    cartItems: !!cartItems,
+    cartSubtotal: !!cartSubtotal,
+    cartModalEl: !!cartModalEl
+  });
+  
+  if (!cartModalEl) {
+    console.error('Modal del carrito no encontrado');
+    return;
+  }
+  
   const cartModal = new bootstrap.Modal(cartModalEl);
-  const cartItemsContainer = document.getElementById('cart-items');
-  const cartSubtotalEl = document.getElementById('cartSubtotal');
-  const generateBtn = document.getElementById('generateCartInvoice');
   const clearBtn = document.getElementById('clearCart');
-  const invoiceModal = new bootstrap.Modal(document.getElementById('cartInvoiceModal'));
-
-  function loadCart(){
-    try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e){ return []; }
+  const generateBtn = document.getElementById('generateCartInvoice');
+  const invoiceModalEl = document.getElementById('cartInvoiceModal');
+  
+  if (!invoiceModalEl) {
+    console.error('Modal de factura no encontrado');
+    return;
   }
-  function saveCart(cart){ localStorage.setItem(STORAGE_KEY, JSON.stringify(cart)); updateCartUI(); }
-
-  function updateCartUI(){
-    const cart = loadCart();
-    const totalItems = cart.reduce((s,i)=>s+i.qty,0);
+  
+  const invoiceModal = new bootstrap.Modal(invoiceModalEl);
+  
+  // Cargar carrito del localStorage
+  function loadCart() {
+    try {
+      cart = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    } catch (e) {
+      cart = [];
+    }
+  }
+  
+  // Guardar carrito en localStorage
+  function saveCart() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
+  }
+  
+  // Agregar producto al carrito
+  function addToCart(id, nombre, precio, imagen) {
+    console.log('addToCart llamada con:', {id, nombre, precio, imagen});
+    
+    const existing = cart.find(item => item.id === id);
+    
+    if (existing) {
+      existing.qty += 1;
+      console.log('Producto existente, nueva cantidad:', existing.qty);
+    } else {
+      const newItem = {
+        id: id,
+        nombre: nombre,
+        precio: parseFloat(precio),
+        imagen: imagen,
+        qty: 1
+      };
+      cart.push(newItem);
+      console.log('Nuevo producto agregado:', newItem);
+    }
+    
+    saveCart();
+    updateCartUI();
+    console.log('Carrito actualizado:', cart);
+  }
+  
+  // Actualizar interfaz del carrito
+  function updateCartUI() {
+    // Actualizar contadores
+    const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
     cartCount.textContent = totalItems;
-    renderCart();
+    cartFloatingCount.textContent = totalItems;
+    
+    // Renderizar items del carrito
+    renderCartItems();
   }
-
-  function addToCart(item){
-    const cart = loadCart();
-    const existing = cart.find(c=>c.id == item.id);
-    if(existing){ existing.qty += 1; } else { cart.push({...item, qty:1}); }
-    saveCart(cart);
-    cartModal.show();
-  }
-
-  function renderCart(){
-    const cart = loadCart();
-    cartItemsContainer.innerHTML = '';
-    let subtotal=0;
-    if(cart.length===0){ cartItemsContainer.innerHTML = '<p class="text-muted">El carrito está vacío.</p>'; cartSubtotalEl.textContent = '$0'; return; }
+  
+  // Renderizar items en el modal del carrito
+  function renderCartItems() {
+    cartItems.innerHTML = '';
+    let subtotal = 0;
+    
+    if (cart.length === 0) {
+      cartItems.innerHTML = '<p class="text-muted text-center py-4">El carrito está vacío</p>';
+      cartSubtotal.textContent = '$0';
+      return;
+    }
+    
     cart.forEach(item => {
       subtotal += item.precio * item.qty;
-      const row = document.createElement('div');
-      row.className = 'list-group-item d-flex gap-3 align-items-center';
-      row.innerHTML = `
-        <img src="${item.imagen}" alt="" style="width:84px;height:64px;object-fit:cover;border-radius:6px;">
-        <div class="flex-grow-1">
-          <div class="d-flex justify-content-between"><div><strong>${item.nombre}</strong></div><div>$${Number(item.precio).toLocaleString()}</div></div>
-          <div class="mt-2 d-flex align-items-center gap-2">
-            <button class="btn btn-sm btn-outline-secondary btn-decrease" data-id="${item.id}">-</button>
-            <input class="form-control form-control-sm qty-input" data-id="${item.id}" type="number" min="1" value="${item.qty}" style="width:70px">
-            <button class="btn btn-sm btn-outline-secondary btn-increase" data-id="${item.id}">+</button>
-            <button class="btn btn-sm btn-danger ms-3 btn-remove" data-id="${item.id}">Eliminar</button>
+      
+      const itemElement = document.createElement('div');
+      itemElement.className = 'list-group-item';
+      itemElement.innerHTML = `
+        <div class="d-flex gap-3 align-items-center">
+          <img src="${item.imagen}" alt="${item.nombre}" style="width:80px;height:60px;object-fit:cover;border-radius:8px;" class="cart-item-image">
+          <div class="flex-grow-1">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <h6 class="mb-1">${item.nombre}</h6>
+                <small class="text-muted">$${item.precio.toLocaleString()} c/u</small>
+              </div>
+              <div class="text-end">
+                <div class="fw-bold">$${(item.precio * item.qty).toLocaleString()}</div>
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <div class="input-group quantity-controls" style="width: 140px;">
+                <button class="btn btn-outline-secondary btn-sm" type="button" onclick="changeQuantity('${item.id}', -1)">-</button>
+                <input class="form-control form-control-sm text-center" type="number" min="1" value="${item.qty}" onchange="setQuantity('${item.id}', this.value)">
+                <button class="btn btn-outline-secondary btn-sm" type="button" onclick="changeQuantity('${item.id}', 1)">+</button>
+              </div>
+              <button class="btn btn-sm btn-outline-danger" onclick="removeFromCart('${item.id}')" title="Eliminar">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
           </div>
         </div>
       `;
-      cartItemsContainer.appendChild(row);
+      
+      cartItems.appendChild(itemElement);
     });
-    cartSubtotalEl.textContent = '$' + Number(subtotal).toLocaleString();
+    
+    cartSubtotal.textContent = '$' + subtotal.toLocaleString();
   }
-
-  // Delegation for qty and remove
-  cartItemsContainer.addEventListener('click', function(e){
-    const id = e.target.getAttribute('data-id');
-    if(!id) return;
-    const cart = loadCart();
-    const idx = cart.findIndex(c=>String(c.id)===String(id));
-    if(idx === -1) return;
-    if(e.target.classList.contains('btn-decrease')){ cart[idx].qty = Math.max(1, cart[idx].qty-1); saveCart(cart); }
-    if(e.target.classList.contains('btn-increase')){ cart[idx].qty = cart[idx].qty+1; saveCart(cart); }
-    if(e.target.classList.contains('btn-remove')){ cart.splice(idx,1); saveCart(cart); }
-  });
-
-  cartItemsContainer.addEventListener('change', function(e){
-    if(e.target.classList.contains('qty-input')){
-      const id = e.target.getAttribute('data-id');
-      const q = parseInt(e.target.value) || 1;
-      const cart = loadCart();
-      const it = cart.find(c=>String(c.id)===String(id));
-      if(it){ it.qty = Math.max(1,q); saveCart(cart); }
+  
+  // Cambiar cantidad
+  window.changeQuantity = function(id, delta) {
+    const item = cart.find(item => item.id === id);
+    if (item) {
+      item.qty = Math.max(1, item.qty + delta);
+      saveCart();
+      updateCartUI();
+    }
+  };
+  
+  // Establecer cantidad específica
+  window.setQuantity = function(id, quantity) {
+    const item = cart.find(item => item.id === id);
+    if (item) {
+      item.qty = Math.max(1, parseInt(quantity) || 1);
+      saveCart();
+      updateCartUI();
+    }
+  };
+  
+  // Eliminar del carrito
+  window.removeFromCart = function(id) {
+    cart = cart.filter(item => item.id !== id);
+    saveCart();
+    updateCartUI();
+  };
+  
+  // Event listeners
+  document.addEventListener('click', function(e) {
+    console.log('Click detectado en:', e.target);
+    console.log('Clases del elemento:', e.target.className);
+    
+    // Botones de agregar al carrito
+    const addButton = e.target.closest('[data-add-to-cart]');
+    if (addButton) {
+      console.log('¡Botón del carrito encontrado!', addButton);
+      e.preventDefault();
+      
+      const id = addButton.getAttribute('data-id');
+      const nombre = addButton.getAttribute('data-nombre');
+      const precio = addButton.getAttribute('data-precio');
+      const imagen = addButton.getAttribute('data-img');
+      
+      console.log('Datos extraídos:', {id, nombre, precio, imagen});
+      
+      if (id && nombre && precio) {
+        addToCart(id, nombre, precio, imagen);
+      } else {
+        console.error('Faltan datos del producto:', {id, nombre, precio, imagen});
+      }
+    } else {
+      console.log('No es un botón del carrito');
     }
   });
-
-  // Clear
-  clearBtn.addEventListener('click', function(){ localStorage.removeItem(STORAGE_KEY); updateCartUI(); });
-
-  // Add click handlers to elements marked with data-add-to-cart (delegation)
-  document.addEventListener('click', function(e){
-    const target = e.target.closest('[data-add-to-cart]');
-    if(!target) return;
-    const id = target.getAttribute('data-id');
-    const nombre = target.getAttribute('data-nombre');
-    const precio = Number(target.getAttribute('data-precio')||0);
-    const imagen = target.getAttribute('data-img') || '';
-    addToCart({id,nombre,precio,imagen});
+  
+  // Abrir carrito
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM completamente cargado, configurando event listeners...');
+    
+    const topButton = document.getElementById('topCartButton');
+    const floatingButton = document.getElementById('cartButton');
+    
+    console.log('Botones del carrito:', {
+      topButton: !!topButton,
+      floatingButton: !!floatingButton
+    });
+    
+    if (topButton) {
+      topButton.addEventListener('click', () => {
+        console.log('Abriendo carrito desde botón superior');
+        cartModal.show();
+      });
+    }
+    
+    if (floatingButton) {
+      floatingButton.addEventListener('click', () => {
+        console.log('Abriendo carrito desde botón flotante');
+        cartModal.show();
+      });
+    }
+    
+    // Configurar botón de limpiar carrito
+    if (clearBtn) {
+      clearBtn.addEventListener('click', function() {
+        if (confirm('¿Estás seguro de que quieres limpiar el carrito?')) {
+          cart = [];
+          saveCart();
+          updateCartUI();
+        }
+      });
+    }
+    
+    // Configurar botón de generar factura
+    if (generateBtn) {
+      generateBtn.addEventListener('click', function() {
+        if (cart.length === 0) {
+          alert('El carrito está vacío');
+          return;
+        }
+        
+        const nombre = document.getElementById('cart_nombre').value.trim();
+        const documento = document.getElementById('cart_documento').value.trim();
+        const mesa = document.getElementById('cart_mesa').value;
+        const fecha = document.getElementById('cart_fecha').value;
+        const hora = document.getElementById('cart_hora').value;
+        
+        if (!nombre || !documento || !mesa || !fecha || !hora) {
+          alert('Por favor complete todos los campos obligatorios');
+          return;
+        }
+        
+        const telefono = document.getElementById('cart_telefono').value.trim();
+        
+        // Generar HTML de la factura
+        let total = 0;
+        const itemsHtml = cart.map(item => {
+          total += item.precio * item.qty;
+          return `
+            <tr>
+              <td class="text-center">${item.qty}</td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <img src="${item.imagen}" style="width:50px;height:38px;object-fit:cover;border-radius:4px;">
+                  <span>${item.nombre}</span>
+                </div>
+              </td>
+              <td class="text-end">$${item.precio.toLocaleString()}</td>
+              <td class="text-end">$${(item.precio * item.qty).toLocaleString()}</td>
+            </tr>
+          `;
+        }).join('');
+        
+        const invoiceHtml = `
+          <div id="cart-invoice-area" class="p-3">
+            <div class="text-center mb-4">
+              <h3>🏝️ Isla Encanto</h3>
+              <h5>Factura de Restaurante</h5>
+            </div>
+            
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <p><strong>Cliente:</strong> ${nombre}</p>
+                ${telefono ? `<p><strong>Teléfono:</strong> ${telefono}</p>` : ''}
+                <p><strong>Documento:</strong> ${documento}</p>
+              </div>
+              <div class="col-md-6">
+                <p><strong>Mesa:</strong> Mesa ${mesa}</p>
+                <p><strong>Fecha:</strong> ${fecha}</p>
+                <p><strong>Hora:</strong> ${hora}</p>
+              </div>
+            </div>
+            
+            <hr>
+            
+            <table class="table table-striped">
+              <thead class="table-dark">
+                <tr>
+                  <th class="text-center">Cant.</th>
+                  <th>Producto</th>
+                  <th class="text-end">Precio U.</th>
+                  <th class="text-end">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+              </tbody>
+            </table>
+            
+            <hr>
+            
+            <div class="text-end">
+              <h4><strong>Total: $${total.toLocaleString()}</strong></h4>
+            </div>
+            
+            <div class="text-center mt-4">
+              <small class="text-muted">¡Gracias por su preferencia!</small>
+            </div>
+          </div>
+        `;
+        
+        document.getElementById('cart-invoice-body').innerHTML = invoiceHtml;
+        invoiceModal.show();
+      });
+    }
+    
+    // Configurar botón de descarga
+    const downloadBtn = document.getElementById('download-cart-invoice');
+    if (downloadBtn) {
+      downloadBtn.addEventListener('click', function() {
+        const element = document.getElementById('cart-invoice-area');
+        if (!element) {
+          alert('No hay factura para descargar');
+          return;
+        }
+        
+        const options = {
+          margin: 0.5,
+          filename: `factura_isla_encanto_${new Date().toISOString().split('T')[0]}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2 },
+          jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
+        
+        html2pdf().set(options).from(element).save();
+      });
+    }
   });
-
-  // Open cart via either floating or top button
-  const topBtn = document.getElementById('topCartButton');
-  const floatingBtn = document.getElementById('cartButton');
-  const openBtns = [topBtn, floatingBtn].filter(Boolean);
-  openBtns.forEach(b=>b.addEventListener('click', ()=>cartModal.show()));
-
-  // Generate invoice HTML and show invoice modal
-  generateBtn.addEventListener('click', function(){
-    const cart = loadCart();
-    if(cart.length===0){ alert('El carrito está vacío'); return; }
-    const nombre = document.getElementById('cart_nombre').value || '';
-    const telefono = document.getElementById('cart_telefono').value || '';
-    const documento = document.getElementById('cart_documento').value || '';
-    const mesaSel = document.getElementById('cart_mesa').value || '';
-    const fecha = document.getElementById('cart_fecha').value || '';
-    const hora = document.getElementById('cart_hora').value || '';
-    // Build invoice HTML
-    let total = 0;
-    const itemsHtml = cart.map(i=>{ total += i.precio * i.qty; return `<tr><td>${i.qty}</td><td><img src="${i.imagen}" style="width:64px;height:48px;object-fit:cover;border-radius:4px;margin-right:8px;"> ${i.nombre}</td><td>$${Number(i.precio).toLocaleString()}</td><td>$${Number(i.precio*i.qty).toLocaleString()}</td></tr>` }).join('');
-    const invoiceHtml = `
-      <div id="cart-invoice-area">
-        <h4>Isla Encanto — Factura</h4>
-        <p><strong>Cliente:</strong> ${nombre} ${telefono ? '- ' + telefono : ''}</p>
-        <p><strong>Documento:</strong> ${documento}</p>
-        <p><strong>Mesa:</strong> ${mesaSel ? 'Mesa ' + mesaSel : 'No asignada'} — <strong>Fecha/Hora:</strong> ${fecha} ${hora}</p>
-        <hr>
-        <table class="table">
-          <thead><tr><th>Cant</th><th>Producto</th><th>Precio U.</th><th>Subtotal</th></tr></thead>
-          <tbody>${itemsHtml}</tbody>
-        </table>
-        <hr>
-        <h5>Total: $${Number(total).toLocaleString()}</h5>
-      </div>
-    `;
-    document.getElementById('cart-invoice-body').innerHTML = invoiceHtml;
-    invoiceModal.show();
-  });
-
-  // Download generated invoice
-  document.getElementById('download-cart-invoice').addEventListener('click', function(){
-    const el = document.getElementById('cart-invoice-area');
-    if(!el) return alert('No hay factura para descargar');
-    html2pdf().set({margin:0.5, filename:'factura_isla_encanto.pdf', jsPDF:{unit:'in', format:'a4'}}).from(el).save();
-  });
-
-  // Final init
+  
+  // Inicialización
+  loadCart();
   updateCartUI();
+  
 })();
 </script>
+
+<!-- html2pdf -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
 {% endblock %}

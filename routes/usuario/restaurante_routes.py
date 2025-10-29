@@ -5,15 +5,15 @@ from models.reservarmenu import ReservaMenu
 from utils.extensions import db
 from datetime import datetime
 
-usuario_restaurante = Blueprint('usuario_restaurante', __name__)
+usuario_restaurante = Blueprint('usuario_restaurante', __name__, url_prefix='/usuario')
 
-@usuario_restaurante.route('/usuario/restaurante')
+@usuario_restaurante.route('/restaurante')
 def restaurante_usuario():
     platos = NuevoPlato.query.order_by(NuevoPlato.categoria, NuevoPlato.nombre).all()
     mesas = NuevaMesa.query.filter_by(disponible=True).all()
     return render_template('usuario/restaurante_usuario.html', platos=platos, mesas=mesas)
 
-@usuario_restaurante.route('/usuario/reservar', methods=['POST'])
+@usuario_restaurante.route('/reservar', methods=['POST'])
 def reservar():
     # datos cliente(s)
     clientes_nombres = request.form.getlist('cliente_nombre[]')

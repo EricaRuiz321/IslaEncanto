@@ -249,7 +249,7 @@ def create_app():
     safe_register(nuevamesa_bp, prefix='/admin')
 
     # Usuario restaurante
-    safe_register(usuario_restaurante, prefix='/usuario')
+    safe_register(usuario_restaurante)
 
     # ------------------------------------------------------------
     # Aliases de Rutas (compatibilidad con plantillas)
