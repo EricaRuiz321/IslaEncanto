@@ -4,20 +4,16 @@
 
 <div class="container mt-5">
 
-  <!-- Header con botones para navegar entre Reservas y Restaurante -->
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-      <!-- Botón: añadir plato a la izquierda -->
       <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalPlato">+ Añadir plato</button>
     </div>
     <div class="d-flex gap-2">
-      <!-- Botones de navegación a la derecha: Reservas (azul) y Restaurante (verde) -->
-      <a href="{{ url_for('reservas.reservas_admin') }}" class="btn btn-primary" onclick="window.location='{{ url_for('reservas.reservas_admin') }}'">Reservas</a>
-      <a href="{{ url_for('main.restaurante_admin') }}" class="btn btn-success" onclick="window.location='{{ url_for('main.restaurante_admin') }}'">Restaurante</a>
+      <a href="{{ url_for('reservas_bp.reservas_admin') }}" class="btn btn-primary">Reservas</a>
+      <a href="{{ url_for('main.restaurante_admin') }}" class="btn btn-success">Restaurante</a>
     </div>
   </div>
 
-  <!-- Listado de platos con CRUD y especificaciones -->
   <div class="row">
     {% for p in platos %}
     <div class="col-md-4 mb-3">
@@ -38,7 +34,6 @@
       </div>
     </div>
 
-    <!-- Modal especificaciones plato -->
     <div class="modal fade" id="modalEspecificacionPlato{{ p.idPlato }}" tabindex="-1">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -50,7 +45,6 @@
             <img src="{{ url_for('static', filename=p.imagen or 'img/default_food.jpg') }}" class="img-fluid mb-3">
             <p><strong>Precio:</strong> ${{ '{:,.0f}'.format(p.precio) }}</p>
             <p>{{ p.descripcion or 'Sin descripción' }}</p>
-            <p><strong>Sección:</strong> {{ p.seccion or 'N/A' }}</p>
           </div>
           <div class="modal-footer">
             <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
@@ -59,62 +53,51 @@
       </div>
     </div>
 
-      <!-- Modal editar plato (inline) -->
-      <div class="modal fade" id="modalEditarPlato{{ p.idPlato }}" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-            <form method="POST" action="{{ url_for('nuevoplato.editar_plato', plato_id=p.idPlato) }}" enctype="multipart/form-data">
-              <div class="modal-header">
-                <h5 class="modal-title">Editar plato — {{ p.nombre }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+    <div class="modal fade" id="modalEditarPlato{{ p.idPlato }}" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <form method="POST" action="{{ url_for('nuevoplato.editar_plato', plato_id=p.idPlato) }}" enctype="multipart/form-data">
+            <div class="modal-header">
+              <h5 class="modal-title">Editar plato — {{ p.nombre }}</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-2">
+                <label class="form-label">Nombre</label>
+                <input class="form-control" name="nombre" value="{{ p.nombre }}" required>
               </div>
-              <div class="modal-body">
-                <div class="mb-2">
-                  <label class="form-label">Nombre</label>
-                  <input class="form-control" name="nombre" value="{{ p.nombre }}" required>
-                </div>
-                <div class="mb-2">
-                  <label class="form-label">Descripción</label>
-                  <textarea class="form-control" name="descripcion" rows="3">{{ p.descripcion or '' }}</textarea>
-                </div>
-                <div class="row g-2">
-                  <div class="col-md-6 mb-2">
-                    <label class="form-label">Precio</label>
-                    <input class="form-control" name="precio" type="number" step="0.01" value="{{ p.precio }}">
-                  </div>
-                  <div class="col-md-6 mb-2">
-                    <label class="form-label">Sección</label>
-                    <select class="form-select" name="seccion">
-                      <option value="">--Seleccionar--</option>
-                      <option value="Desayuno" {% if (p.seccion or p.categoria) == 'Desayuno' %}selected{% endif %}>Desayuno</option>
-                      <option value="Almuerzo" {% if (p.seccion or p.categoria) == 'Almuerzo' %}selected{% endif %}>Almuerzo</option>
-                      <option value="Cena" {% if (p.seccion or p.categoria) == 'Cena' %}selected{% endif %}>Cena</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="mb-2">
-                  <label class="form-label">Imagen actual</label>
-                  <div class="mb-2"><img src="{{ url_for('static', filename=p.imagen or 'img/default_food.jpg') }}" class="img-fluid" style="max-height:140px; object-fit:cover;"></div>
-                </div>
-                <div class="mb-2">
-                  <label class="form-label">Cambiar imagen</label>
-                  <input class="form-control" type="file" name="imagen" accept="image/*">
+              <div class="mb-2">
+                <label class="form-label">Descripción</label>
+                <textarea class="form-control" name="descripcion" rows="3">{{ p.descripcion or '' }}</textarea>
+              </div>
+              <div class="row g-2">
+                <div class="col-md-6 mb-2">
+                  <label class="form-label">Precio</label>
+                  <input class="form-control" name="precio" type="number" step="0.01" value="{{ p.precio }}">
                 </div>
               </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Guardar</button>
+              <div class="mb-2">
+                <label class="form-label">Imagen actual</label>
+                <div class="mb-2"><img src="{{ url_for('static', filename=p.imagen or 'img/default_food.jpg') }}" class="img-fluid" style="max-height:140px; object-fit:cover;"></div>
               </div>
-            </form>
-          </div>
+              <div class="mb-2">
+                <label class="form-label">Cambiar imagen</label>
+                <input class="form-control" type="file" name="imagen" accept="image/*">
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="submit" class="btn btn-primary">Guardar</button>
+            </div>
+          </form>
         </div>
       </div>
+    </div>
     {% endfor %}
   </div>
 
 </div>
 
-<!-- Modal Nuevo Plato (existing modal content should remain or be implemented) -->
 <div class="modal fade" id="modalPlato" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -137,15 +120,6 @@
               <label class="form-label">Precio</label>
               <input class="form-control" name="precio" type="number" step="0.01">
             </div>
-            <div class="col-md-6">
-              <label class="form-label">Categoría</label>
-              <select class="form-select" name="categoria" required>
-                <option value="">--Seleccionar sección--</option>
-                <option value="Desayuno">Desayuno</option>
-                <option value="Almuerzo">Almuerzo</option>
-                <option value="Cena">Cena</option>
-              </select>
-            </div>
           </div>
           <div class="mb-2 mt-2">
             <label class="form-label">Imagen</label>
@@ -161,7 +135,6 @@
   </div>
 </div>
 
-<!-- Añadir formulario general para reservar mesa (modal) -->
 <div class="modal fade" id="modalReservarMesaGeneral" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -192,10 +165,9 @@
             <input class="form-control" name="telefono">
           </div>
           <div class="mb-2">
-            <label class="form-label">Detalles</label>
-            <textarea class="form-control" name="detalles" rows="2"></textarea>
+            <label class="form-label">Número de Documento</label>
+            <input class="form-control" name="numeroDocumento">
           </div>
-
           <div class="row g-2">
             <div class="col-md-6">
               <label class="form-label">Fecha</label>
@@ -206,6 +178,19 @@
               <input class="form-control" type="time" name="hora">
             </div>
           </div>
+          
+          <div class="mb-2 mt-2">
+            <label class="form-label">Plato</label>
+            <select class="form-select" name="idPlato">
+              <option value="">-- Sin Plato (Reserva simple) --</option>
+              {% if platos %}
+                {% for p in platos %}
+                  <option value="{{ p.idPlato }}">{{ p.nombre }}</option>
+                {% endfor %}
+              {% endif %}
+            </select>
+          </div>
+
         </div>
 
         <div class="modal-footer">
@@ -217,13 +202,13 @@
   </div>
 </div>
 
-<!-- Script que fija la action del formulario según la mesa seleccionada -->
 <script>
 document.addEventListener('DOMContentLoaded', function(){
   const form = document.getElementById('formReservarMesa');
   const selectMesa = document.getElementById('selectMesa');
-  // plantilla de acción: ruta admin/reservas/reservar/<mesa_id> (usa mesa_id=0 como placeholder)
-  const actionTemplate = "{{ url_for('reservas.reservar_mesa', mesa_id=0) }}";
+  // plantilla de acción: ruta admin/reservar/<mesa_id>
+  // CORREGIDO: Usar el endpoint 'reservas_bp.reservar_mesa_vista'
+  const actionTemplate = "{{ url_for('reservas_bp.reservar_mesa_vista', mesa_id=0) }}"; 
   form.addEventListener('submit', function(e){
     const id = selectMesa.value;
     if (!id) {
