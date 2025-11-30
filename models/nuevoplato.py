@@ -9,7 +9,6 @@ class NuevoPlato(db.Model):
     nombre = db.Column(db.String(100), nullable=False)
     descripcion = db.Column(db.Text, nullable=True)
     precio = db.Column(db.Float, nullable=False)
-    categoria = db.Column(db.String(50), nullable=False)  # desayuno, almuerzo o cena
     imagen = db.Column(db.String(200), nullable=True)
     idMesa = db.Column(db.Integer, db.ForeignKey("mesa.idMesa"), nullable=True)
 
