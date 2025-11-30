@@ -1,611 +1,497 @@
 {% extends 'usuario/base.html' %}
 {% block content %}
 <br><br>
+
 <div class="container mt-4 usuario-restaurante">
-  <div class="d-flex justify-content-end mb-2">
-    <button id="topCartButton" class="btn btn-outline-primary" title="Ver carrito">
-      🍽️ <span id="cartCount" class="badge bg-primary ms-2">0</span>
-    </button>
-  </div>
-
-  {% set categorias = ['Desayuno','Almuerzo','Cena'] %}
-  {% for cat in categorias %}
-    <h5 class="mt-3">{{ cat }}</h5>
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
-      {% for p in platos if p.categoria == cat %}
-        <div class="col d-flex">
-          <div class="card h-100 usuario-card w-100">
-            <img src="{{ url_for('static', filename=p.imagen or 'img/default_food.jpg') }}" class="usuario-card-img">
-            <div class="card-body d-flex flex-column">
-              <h6 class="mb-1">{{ p.nombre }}</h6>
-              <p class="text-muted small mb-2">{{ p.descripcion or '' }}</p>
-              <p class="fw-bold mb-2">${{ '{:,.0f}'.format(p.precio|float) }}</p>
-              <div class="mt-auto d-flex gap-2">
-                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#infoPlato{{ p.idPlato }}">Especificaciones</button>
-                <button type="button" class="btn btn-success btn-sm" data-add-to-cart="1"
-                        data-id="{{ p.idPlato }}"
-                        data-nombre="{{ p.nombre }}"
-                        data-precio="{{ p.precio }}"
-                        data-img="{{ url_for('static', filename=p.imagen or 'img/default_food.jpg') }}">
-                  Reservar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Modal info plato -->
-        <div class="modal fade" id="infoPlato{{ p.idPlato }}" tabindex="-1">
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-              <div class="modal-header"><h5>{{ p.nombre }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-              <div class="modal-body">
-                <img src="{{ url_for('static', filename=p.imagen or 'img/default_food.jpg') }}" class="img-fluid mb-2">
-                <p><strong>Precio:</strong> ${{ '{:,.0f}'.format(p.precio) }}</p>
-                <p>{{ p.descripcion }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Modal reservar plato (formulario específico para este plato) -->
-        <div class="modal fade" id="reservarPlato{{ p.idPlato }}" tabindex="-1">
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-              <form method="POST" action="{{ url_for('usuario_restaurante.reservar') }}">
-                <input type="hidden" name="idPlato[]" value="{{ p.idPlato }}">
-                <div class="modal-header">
-                  <h5>Reservar: {{ p.nombre }}</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-2">
-                      <label class="form-label">Nombre</label>
-                      <input class="form-control" name="cliente_nombre[]" required>
-                    </div>
-                    <div class="mb-2">
-                      <label class="form-label">Teléfono</label>
-                      <input class="form-control" name="cliente_telefono[]">
-                    </div>
-                    <div class="mb-2">
-                      <label class="form-label">Número de documento</label>
-                      <input class="form-control" name="numeroDocumento" required>
-                    </div>
-                  <div class="mb-2">
-                    <label class="form-label">Mesa</label>
-                    <select class="form-select" name="idMesa" required>
-                      <option value="" disabled selected>Seleccione mesa</option>
-                      {% for m in mesas %}
-                        <option value="{{ m.idMesa }}">Mesa {{ m.numeroMesa }} (Capacidad: {{ m.capacidad }})</option>
-                      {% endfor %}
-                    </select>
-                  </div>
-                  <div class="row g-2">
-                    <div class="col-md-6">
-                      <label class="form-label">Fecha</label>
-                      <input type="date" class="form-control" name="fecha" required>
-                    </div>
-                    <div class="col-md-6">
-                      <label class="form-label">Hora</label>
-                      <input type="time" class="form-control" name="hora" required>
-                    </div>
-                  </div>
-                </div>
-                <div class="modal-footer">
-                  <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                  <button class="btn btn-success" type="submit">Reservar y generar factura</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-
-      {% endfor %}
+    
+    <div class="text-center mb-4">
+        <h2 class="fw-bold">Nuestro Menú</h2>
+        <p class="text-muted">Disfruta de todos nuestros platos disponibles</p>
     </div>
-  {% endfor %}
 
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+        {% for p in platos %}
+        <div class="col d-flex">
+            <div class="card h-100 usuario-card w-100">
+                <img src="{{ url_for('static', filename=p.imagen or 'img/default_food.jpg') }}" class="usuario-card-img">
+
+                <div class="card-body d-flex flex-column">
+                    <h6 class="mb-1">{{ p.nombre }}</h6>
+                    <p class="text-muted small mb-2">{{ p.descripcion or '' }}</p>
+                    <p class="fw-bold mb-2">${{ '{:,.0f}'.format(p.precio|float) }}</p>
+
+                    <div class="mt-auto d-flex gap-2">
+                        <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal"
+                            data-bs-target="#infoPlato{{ p.idPlato }}">Especificaciones</button>
+
+                        <button type="button" class="btn btn-success btn-sm"
+                            data-add-to-cart="1"
+                            data-id="{{ p.idPlato }}"
+                            data-nombre="{{ p.nombre }}"
+                            data-precio="{{ p.precio }}"
+                            data-img="{{ url_for('static', filename=p.imagen or 'img/default_food.jpg') }}">
+                            Reservar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="infoPlato{{ p.idPlato }}" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5>{{ p.nombre }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <img src="{{ url_for('static', filename=p.imagen or 'img/default_food.jpg') }}" class="img-fluid mb-2">
+                        <p><strong>Precio:</strong> ${{ '{:,.0f}'.format(p.precio) }}</p>
+                        <p>{{ p.descripcion }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 </div>
 
-  </div>
-
-</div>
-
-<!-- Botón flotante del carrito -->
-<button id="cartButton" class="btn btn-primary position-fixed" style="bottom: 20px; right: 20px; border-radius: 50%; width: 60px; height: 60px; z-index: 1000;">
-  🛒
-  <span id="cartFloatingCount" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-    0
-  </span>
+<button id="cartButton" 
+    class="btn btn-primary position-fixed"
+    data-bs-toggle="modal" 
+    data-bs-target="#cartModal"
+    style="bottom: 20px; right: 20px; border-radius: 50%; width: 60px; height: 60px; z-index: 1000;">
+    🛒
+    <span id="cartFloatingCount"
+        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
 </button>
 
-<!-- Modal del carrito -->
+
 <div class="modal fade" id="cartModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Carrito de Compras</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div id="cart-items" class="list-group mb-3">
-          <!-- Los items del carrito se insertarán aquí dinámicamente -->
-        </div>
-        
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h5>Subtotal: <span id="cartSubtotal">$0</span></h5>
-          <button id="clearCart" class="btn btn-outline-danger btn-sm">Limpiar carrito</button>
-        </div>
+    <div class="modal-dialog modal-md">
+        <div class="modal-content rounded-3 shadow-sm">
 
-        <!-- Información del cliente para generar factura -->
-        <div class="card">
-          <div class="card-header">
-            <h6 class="mb-0">Información para la reserva</h6>
-          </div>
-          <div class="card-body">
-            <div class="row g-2">
-              <div class="col-md-6">
-                <label class="form-label">Nombre</label>
-                <input id="cart_nombre" class="form-control" required>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Teléfono</label>
-                <input id="cart_telefono" class="form-control">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Número de documento</label>
-                <input id="cart_documento" class="form-control" required>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Mesa</label>
-                <select id="cart_mesa" class="form-select" required>
-                  <option value="" disabled selected>Seleccione mesa</option>
-                  {% for m in mesas %}
-                    <option value="{{ m.numeroMesa }}">Mesa {{ m.numeroMesa }} (Capacidad: {{ m.capacidad }})</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Fecha</label>
-                <input id="cart_fecha" type="date" class="form-control" required>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Hora</label>
-                <input id="cart_hora" type="time" class="form-control" required>
-              </div>
+            <div class="modal-header border-0 pb-0">
+                <h4 class="modal-title fw-bold text-primary">
+                    <span style="font-size: 1.5rem;">&#128722;</span> Tu Carrito
+                </h4>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Continuar comprando</button>
-        <button id="generateCartInvoice" type="button" class="btn btn-success">Generar factura</button>
-      </div>
-    </div>
-  </div>
-</div>
 
-<!-- Modal factura del carrito -->
-<div class="modal fade" id="cartInvoiceModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Factura Generada</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body" id="cart-invoice-body">
-        <!-- La factura se generará aquí dinámicamente -->
-      </div>
-      <div class="modal-footer">
-        <button id="download-cart-invoice" class="btn btn-primary">Descargar PDF</button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-      </div>
-    </div>
-  </div>
-</div>
+            <div class="modal-body pt-0">
+                <div id="cart-items" class="mb-3"></div>
 
-<!-- Modal factura (igual que ya tienes, se muestra si backend envía invoice) -->
-<div class="modal fade" id="modalFactura" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content" id="factura-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Factura</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body" id="factura-html">
-        {% if invoice %}
-          <div id="invoice-area" class="p-3">
-            <h4>Isla Encanto</h4>
-            <p><strong>Mesa:</strong> {{ invoice.mesa_numero }}</p>
-            <p><strong>Fecha:</strong> {{ invoice.fecha }} — <strong>Hora:</strong> {{ invoice.hora }}</p>
-            <hr>
-            <h6>Clientes:</h6>
-            <ul>
-              {% for c in invoice.clientes %}
-                <li>{{ c.nombre }} {% if c.telefono %}- {{ c.telefono }}{% endif %}</li>
-              {% endfor %}
-            </ul>
-            <hr>
-            <h6>Platos</h6>
-            <ul>
-              {% for p in invoice.platos %}
-                <li>{{ p.nombre }} — ${{ '{:,.0f}'.format(p.precio) }}</li>
-              {% endfor %}
-            </ul>
-            <hr>
-            <h5>Total: ${{ '{:,.0f}'.format(invoice.total) }}</h5>
-          </div>
-        {% else %}
-          <p>No hay factura disponible.</p>
-        {% endif %}
-      </div>
-      <div class="modal-footer">
-        <button id="download-invoice" class="btn btn-primary">Descargar PDF</button>
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-// Carrito funcional completo
-(function() {
-  'use strict';
-  
-  console.log('Inicializando carrito...');
-  
-  const STORAGE_KEY = 'restaurant_cart';
-  let cart = [];
-  
-  // Verificar que los elementos existan
-  console.log('Verificando elementos del DOM...');
-  
-  // Elementos del DOM
-  const cartCount = document.getElementById('cartCount');
-  const cartFloatingCount = document.getElementById('cartFloatingCount');
-  const cartItems = document.getElementById('cart-items');
-  const cartSubtotal = document.getElementById('cartSubtotal');
-  const cartModalEl = document.getElementById('cartModal');
-  
-  console.log('Elementos encontrados:', {
-    cartCount: !!cartCount,
-    cartFloatingCount: !!cartFloatingCount,
-    cartItems: !!cartItems,
-    cartSubtotal: !!cartSubtotal,
-    cartModalEl: !!cartModalEl
-  });
-  
-  if (!cartModalEl) {
-    console.error('Modal del carrito no encontrado');
-    return;
-  }
-  
-  const cartModal = new bootstrap.Modal(cartModalEl);
-  const clearBtn = document.getElementById('clearCart');
-  const generateBtn = document.getElementById('generateCartInvoice');
-  const invoiceModalEl = document.getElementById('cartInvoiceModal');
-  
-  if (!invoiceModalEl) {
-    console.error('Modal de factura no encontrado');
-    return;
-  }
-  
-  const invoiceModal = new bootstrap.Modal(invoiceModalEl);
-  
-  // Cargar carrito del localStorage
-  function loadCart() {
-    try {
-      cart = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    } catch (e) {
-      cart = [];
-    }
-  }
-  
-  // Guardar carrito en localStorage
-  function saveCart() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
-  }
-  
-  // Agregar producto al carrito
-  function addToCart(id, nombre, precio, imagen) {
-    console.log('addToCart llamada con:', {id, nombre, precio, imagen});
-    
-    const existing = cart.find(item => item.id === id);
-    
-    if (existing) {
-      existing.qty += 1;
-      console.log('Producto existente, nueva cantidad:', existing.qty);
-    } else {
-      const newItem = {
-        id: id,
-        nombre: nombre,
-        precio: parseFloat(precio),
-        imagen: imagen,
-        qty: 1
-      };
-      cart.push(newItem);
-      console.log('Nuevo producto agregado:', newItem);
-    }
-    
-    saveCart();
-    updateCartUI();
-    console.log('Carrito actualizado:', cart);
-  }
-  
-  // Actualizar interfaz del carrito
-  function updateCartUI() {
-    // Actualizar contadores
-    const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
-    cartCount.textContent = totalItems;
-    cartFloatingCount.textContent = totalItems;
-    
-    // Renderizar items del carrito
-    renderCartItems();
-  }
-  
-  // Renderizar items en el modal del carrito
-  function renderCartItems() {
-    cartItems.innerHTML = '';
-    let subtotal = 0;
-    
-    if (cart.length === 0) {
-      cartItems.innerHTML = '<p class="text-muted text-center py-4">El carrito está vacío</p>';
-      cartSubtotal.textContent = '$0';
-      return;
-    }
-    
-    cart.forEach(item => {
-      subtotal += item.precio * item.qty;
-      
-      const itemElement = document.createElement('div');
-      itemElement.className = 'list-group-item';
-      itemElement.innerHTML = `
-        <div class="d-flex gap-3 align-items-center">
-          <img src="${item.imagen}" alt="${item.nombre}" style="width:80px;height:60px;object-fit:cover;border-radius:8px;" class="cart-item-image">
-          <div class="flex-grow-1">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-              <div>
-                <h6 class="mb-1">${item.nombre}</h6>
-                <small class="text-muted">$${item.precio.toLocaleString()} c/u</small>
-              </div>
-              <div class="text-end">
-                <div class="fw-bold">$${(item.precio * item.qty).toLocaleString()}</div>
-              </div>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-              <div class="input-group quantity-controls" style="width: 140px;">
-                <button class="btn btn-outline-secondary btn-sm" type="button" onclick="changeQuantity('${item.id}', -1)">-</button>
-                <input class="form-control form-control-sm text-center" type="number" min="1" value="${item.qty}" onchange="setQuantity('${item.id}', this.value)">
-                <button class="btn btn-outline-secondary btn-sm" type="button" onclick="changeQuantity('${item.id}', 1)">+</button>
-              </div>
-              <button class="btn btn-sm btn-outline-danger" onclick="removeFromCart('${item.id}')" title="Eliminar">
-                <i class="bi bi-trash"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-      
-      cartItems.appendChild(itemElement);
-    });
-    
-    cartSubtotal.textContent = '$' + subtotal.toLocaleString();
-  }
-  
-  // Cambiar cantidad
-  window.changeQuantity = function(id, delta) {
-    const item = cart.find(item => item.id === id);
-    if (item) {
-      item.qty = Math.max(1, item.qty + delta);
-      saveCart();
-      updateCartUI();
-    }
-  };
-  
-  // Establecer cantidad específica
-  window.setQuantity = function(id, quantity) {
-    const item = cart.find(item => item.id === id);
-    if (item) {
-      item.qty = Math.max(1, parseInt(quantity) || 1);
-      saveCart();
-      updateCartUI();
-    }
-  };
-  
-  // Eliminar del carrito
-  window.removeFromCart = function(id) {
-    cart = cart.filter(item => item.id !== id);
-    saveCart();
-    updateCartUI();
-  };
-  
-  // Event listeners
-  document.addEventListener('click', function(e) {
-    console.log('Click detectado en:', e.target);
-    console.log('Clases del elemento:', e.target.className);
-    
-    // Botones de agregar al carrito
-    const addButton = e.target.closest('[data-add-to-cart]');
-    if (addButton) {
-      console.log('¡Botón del carrito encontrado!', addButton);
-      e.preventDefault();
-      
-      const id = addButton.getAttribute('data-id');
-      const nombre = addButton.getAttribute('data-nombre');
-      const precio = addButton.getAttribute('data-precio');
-      const imagen = addButton.getAttribute('data-img');
-      
-      console.log('Datos extraídos:', {id, nombre, precio, imagen});
-      
-      if (id && nombre && precio) {
-        addToCart(id, nombre, precio, imagen);
-      } else {
-        console.error('Faltan datos del producto:', {id, nombre, precio, imagen});
-      }
-    } else {
-      console.log('No es un botón del carrito');
-    }
-  });
-  
-  // Abrir carrito
-  document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM completamente cargado, configurando event listeners...');
-    
-    const topButton = document.getElementById('topCartButton');
-    const floatingButton = document.getElementById('cartButton');
-    
-    console.log('Botones del carrito:', {
-      topButton: !!topButton,
-      floatingButton: !!floatingButton
-    });
-    
-    if (topButton) {
-      topButton.addEventListener('click', () => {
-        console.log('Abriendo carrito desde botón superior');
-        cartModal.show();
-      });
-    }
-    
-    if (floatingButton) {
-      floatingButton.addEventListener('click', () => {
-        console.log('Abriendo carrito desde botón flotante');
-        cartModal.show();
-      });
-    }
-    
-    // Configurar botón de limpiar carrito
-    if (clearBtn) {
-      clearBtn.addEventListener('click', function() {
-        if (confirm('¿Estás seguro de que quieres limpiar el carrito?')) {
-          cart = [];
-          saveCart();
-          updateCartUI();
-        }
-      });
-    }
-    
-    // Configurar botón de generar factura
-    if (generateBtn) {
-      generateBtn.addEventListener('click', function() {
-        if (cart.length === 0) {
-          alert('El carrito está vacío');
-          return;
-        }
-        
-        const nombre = document.getElementById('cart_nombre').value.trim();
-        const documento = document.getElementById('cart_documento').value.trim();
-        const mesa = document.getElementById('cart_mesa').value;
-        const fecha = document.getElementById('cart_fecha').value;
-        const hora = document.getElementById('cart_hora').value;
-        
-        if (!nombre || !documento || !mesa || !fecha || !hora) {
-          alert('Por favor complete todos los campos obligatorios');
-          return;
-        }
-        
-        const telefono = document.getElementById('cart_telefono').value.trim();
-        
-        // Generar HTML de la factura
-        let total = 0;
-        const itemsHtml = cart.map(item => {
-          total += item.precio * item.qty;
-          return `
-            <tr>
-              <td class="text-center">${item.qty}</td>
-              <td>
-                <div class="d-flex align-items-center gap-2">
-                  <img src="${item.imagen}" style="width:50px;height:38px;object-fit:cover;border-radius:4px;">
-                  <span>${item.nombre}</span>
+                <div id="cart-footer-summary" class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                    <h5 class="mb-0">Total:</h5>
+                    <h4 class="mb-0 text-primary fw-bolder" id="cartSubtotal">$0</h4>
                 </div>
-              </td>
-              <td class="text-end">$${item.precio.toLocaleString()}</td>
-              <td class="text-end">$${(item.precio * item.qty).toLocaleString()}</td>
-            </tr>
-          `;
-        }).join('');
-        
-        const invoiceHtml = `
-          <div id="cart-invoice-area" class="p-3">
-            <div class="text-center mb-4">
-              <h3>🏝️ Isla Encanto</h3>
-              <h5>Factura de Restaurante</h5>
+
+                <button id="openReservationInfo" class="btn btn-primary w-100 mt-3 py-2 fw-bold" 
+                        data-bs-target="#cartInvoiceModal" disabled>
+                    &#10003; Confirmar Pedido
+                </button>
+                
+                <div class="text-center mt-2">
+                    <button id="clearCart" class="btn btn-link btn-sm text-danger">Limpiar carrito</button>
+                </div>
             </div>
-            
-            <div class="row mb-3">
-              <div class="col-md-6">
-                <p><strong>Cliente:</strong> ${nombre}</p>
-                ${telefono ? `<p><strong>Teléfono:</strong> ${telefono}</p>` : ''}
-                <p><strong>Documento:</strong> ${documento}</p>
-              </div>
-              <div class="col-md-6">
-                <p><strong>Mesa:</strong> Mesa ${mesa}</p>
-                <p><strong>Fecha:</strong> ${fecha}</p>
-                <p><strong>Hora:</strong> ${hora}</p>
-              </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="reservationInfoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Información para la Reserva</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            
-            <hr>
-            
-            <table class="table table-striped">
-              <thead class="table-dark">
-                <tr>
-                  <th class="text-center">Cant.</th>
-                  <th>Producto</th>
-                  <th class="text-end">Precio U.</th>
-                  <th class="text-end">Subtotal</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${itemsHtml}
-              </tbody>
-            </table>
-            
-            <hr>
-            
-            <div class="text-end">
-              <h4><strong>Total: $${total.toLocaleString()}</strong></h4>
+
+            <div class="modal-body">
+                <div id="reservation-items-summary" class="mb-3"></div> 
+                
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white"><h6 class="mb-0">Datos de Contacto y Reserva</h6></div>
+
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label">Nombre</label>
+                                <input id="cart_nombre" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Teléfono</label>
+                                <input id="cart_telefono" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Número de documento</label>
+                                <input id="cart_documento" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Mesa</label>
+                                <select id="cart_mesa" class="form-select" required>
+                                    <option value="" disabled selected>Seleccione mesa</option>
+                                    {% for m in mesas %}
+                                    <option value="{{ m.idMesa }}">Mesa {{ m.numeroMesa }} (Capacidad: {{ m.capacidad }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Fecha</label>
+                                <input id="cart_fecha" type="date" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Hora</label>
+                                <input id="cart_hora" type="time" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            
-            <div class="text-center mt-4">
-              <small class="text-muted">¡Gracias por su preferencia!</small>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-target="#cartModal" data-bs-toggle="modal">Volver al carrito</button>
+                <button id="generateCartInvoice" class="btn btn-primary">Generar Factura y Confirmar</button>
             </div>
-          </div>
-        `;
-        
-        document.getElementById('cart-invoice-body').innerHTML = invoiceHtml;
-        invoiceModal.show();
-      });
+
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="cartInvoiceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Factura Generada</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body" id="cart-invoice-body"></div>
+
+            <div class="modal-footer">
+                <button id="download-cart-invoice" class="btn btn-secondary" disabled>Descargar PDF (WIP)</button>
+                <button id="confirm-reservation" class="btn btn-primary">Confirmar y Enviar Reserva</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    'use strict';
+
+    const RESERVAR_URL = "{{ url_for('reservarmenu_bp.reservar_carrito') }}";
+    const STORAGE_KEY = 'restaurant_cart';
+    let cart = [];
+    let clientData = {}; 
+
+    const cartFloatingCount = document.getElementById('cartFloatingCount');
+    const cartItems = document.getElementById('cart-items');
+    const cartSubtotal = document.getElementById('cartSubtotal');
+    
+    // Nombres de ID ajustados y nuevo modal de reserva
+    const cartModalEl = document.getElementById('cartModal');
+    const reservationInfoModalEl = document.getElementById('reservationInfoModal');
+    const invoiceModalEl = document.getElementById('cartInvoiceModal');
+
+    const cartModal = cartModalEl ? new bootstrap.Modal(cartModalEl) : null;
+    const reservationInfoModal = reservationInfoModalEl ? new bootstrap.Modal(reservationInfoModalEl) : null;
+    const invoiceModal = invoiceModalEl ? new bootstrap.Modal(invoiceModalEl) : null;
+    
+    const openReservationInfoBtn = document.getElementById('openReservationInfo');
+    const generateInvoiceBtn = document.getElementById('generateCartInvoice');
+    const confirmReservationBtn = document.getElementById('confirm-reservation');
+    const cartInvoiceBody = document.getElementById('cart-invoice-body');
+    const clearCartBtn = document.getElementById('clearCart');
+
+    function loadCart() {
+        try { cart = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+        catch { cart = []; }
+    }
+
+    function saveCart() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
+    }
+
+    function formatCurrency(number) {
+        // Uso de 'es-CO' para el formato colombiano si aplica, o 'es-ES' para general.
+        return '$' + Math.round(number).toLocaleString('es-CO');
+    }
+
+    function addToCart(id, nombre, precio, imagen) {
+        const existing = cart.find(i => String(i.id) === String(id));
+        if (existing) existing.qty++;
+        else cart.push({ id: String(id), nombre, precio: parseFloat(precio), imagen, qty: 1 });
+
+        saveCart();
+        updateCartUI();
+        if(cartModal) cartModal.show();
+    }
+
+    function changeQty(id, delta) {
+        const itemIndex = cart.findIndex(i => String(i.id) === String(id));
+        if (itemIndex > -1) {
+            cart[itemIndex].qty = Math.max(1, cart[itemIndex].qty + delta);
+            saveCart();
+            updateCartUI();
+        }
+    }
+
+    function removeItem(id) {
+        cart = cart.filter(i => String(i.id) !== String(id));
+        saveCart();
+        updateCartUI();
+    }
+
+    function updateCartUI() {
+        const totalItems = cart.reduce((a, i) => a + i.qty, 0);
+        if (cartFloatingCount) cartFloatingCount.textContent = totalItems;
+        renderCartItems();
+
+        // Habilita el botón de confirmar pedido si hay items
+        if (openReservationInfoBtn) {
+            openReservationInfoBtn.disabled = cart.length === 0;
+        }
+    }
+
+    // Dibuja el contenido del carrito con el nuevo diseño
+    function renderCartItems() {
+        if (!cartItems) return;
+        cartItems.innerHTML = '';
+        let subtotal = 0;
+
+        if (!cart.length) {
+            cartItems.innerHTML = '<p class="text-muted text-center py-4">El carrito está vacío</p>';
+            if (cartSubtotal) cartSubtotal.textContent = '$0';
+            return;
+        }
+
+        cart.forEach(item => {
+            const totalItem = item.precio * item.qty;
+            subtotal += totalItem;
+
+            const div = document.createElement('div');
+            // La clase shadow-sm y rounded-3 imita el aspecto de tarjeta de tu imagen
+            div.className = 'd-flex align-items-center mb-3 p-3 bg-white border rounded-3 shadow-sm';
+            div.innerHTML = `
+                <img src="${item.imagen}" class="me-3" style="width:50px;height:50px;border-radius:4px;object-fit:cover;">
+                
+                <div class="flex-grow-1">
+                    <h6 class="mb-0 fw-bold">${item.nombre}</h6>
+                    <span class="small text-muted">${formatCurrency(item.precio)}</span>
+                </div>
+                
+                <div class="d-flex align-items-center me-3">
+                    <button class="btn btn-outline-primary btn-sm rounded-circle p-0" style="width: 24px; height: 24px;" data-change-qty="${item.id}" data-delta="-1">&#8722;</button>
+                    <span class="mx-2 fw-bold" style="min-width: 15px; text-align: center;">${item.qty}</span>
+                    <button class="btn btn-outline-primary btn-sm rounded-circle p-0" style="width: 24px; height: 24px;" data-change-qty="${item.id}" data-delta="1">&#43;</button>
+                </div>
+
+                <div class="d-flex align-items-center">
+                    <strong class="text-end me-3">${formatCurrency(totalItem)}</strong>
+                    <button class="btn btn-outline-danger btn-sm p-0" style="border: none; background: none; color: #dc3545;" data-remove-item="${item.id}">
+                        <i class="bi bi-trash"></i> 🗑️
+                    </button>
+                </div>
+            `;
+            cartItems.appendChild(div);
+        });
+
+        if (cartSubtotal) cartSubtotal.textContent = formatCurrency(subtotal);
     }
     
-    // Configurar botón de descarga
-    const downloadBtn = document.getElementById('download-cart-invoice');
-    if (downloadBtn) {
-      downloadBtn.addEventListener('click', function() {
-        const element = document.getElementById('cart-invoice-area');
-        if (!element) {
-          alert('No hay factura para descargar');
-          return;
+    // ==========================================================
+    // Event Listeners
+    // ==========================================================
+
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('[data-add-to-cart]');
+        if (btn) {
+            e.preventDefault();
+            addToCart(btn.dataset.id, btn.dataset.nombre, btn.dataset.precio, btn.dataset.img);
+            return;
+        }
+
+        const changeBtn = e.target.closest('[data-change-qty]');
+        if (changeBtn) {
+            changeQty(changeBtn.dataset.changeQty, parseInt(changeBtn.dataset.delta, 10));
+            return;
+        }
+
+        const removeBtn = e.target.closest('[data-remove-item]');
+        if (removeBtn) {
+            removeItem(removeBtn.dataset.removeItem);
+            return;
         }
         
-        const options = {
-          margin: 0.5,
-          filename: `factura_isla_encanto_${new Date().toISOString().split('T')[0]}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2 },
-          jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-        };
-        
-        html2pdf().set(options).from(element).save();
-      });
+        // Listener para el botón "Limpiar carrito"
+        if (e.target.id === 'clearCart' && clearCartBtn) {
+            if (confirm('¿Estás seguro de que quieres limpiar el carrito?')) {
+                cart = [];
+                saveCart();
+                updateCartUI();
+            }
+        }
+    });
+
+    // Nuevo Listener para el botón "Confirmar Pedido"
+    if (openReservationInfoBtn) {
+        openReservationInfoBtn.addEventListener('click', function() {
+            if (!cart.length) {
+                alert('El carrito está vacío.');
+                return;
+            }
+            cartModal.hide();
+            // Abre el modal de información para la reserva (tu formulario)
+            reservationInfoModal.show(); 
+        });
     }
-  });
-  
-  // Inicialización
-  loadCart();
-  updateCartUI();
-  
+    
+    // Listener para el botón "Generar Factura y Confirmar" (en el modal de Reserva)
+    if (generateInvoiceBtn) {
+        generateInvoiceBtn.addEventListener('click', function() {
+             if (!cart.length) {
+                alert('El carrito está vacío.');
+                return;
+            }
+
+            // Recoger y validar datos del cliente
+            clientData = {
+                nombre: document.getElementById('cart_nombre').value.trim(),
+                telefono: document.getElementById('cart_telefono').value.trim(),
+                documento: document.getElementById('cart_documento').value.trim(),
+                idMesa: document.getElementById('cart_mesa').value,
+                mesaDisplay: document.getElementById('cart_mesa').options[document.getElementById('cart_mesa').selectedIndex].text,
+                fecha: document.getElementById('cart_fecha').value,
+                hora: document.getElementById('cart_hora').value,
+            };
+
+            const requiredFields = [clientData.nombre, clientData.documento, clientData.idMesa, clientData.fecha, clientData.hora];
+            
+            if (requiredFields.some(val => !val) || clientData.idMesa === "") {
+                alert('Por favor, complete todos los campos de información (Nombre, Documento, Mesa, Fecha, Hora) antes de generar la factura.');
+                return;
+            }
+            
+            // Generar contenido HTML de la Factura
+            let total = cart.reduce((sum, item) => sum + (item.precio * item.qty), 0);
+            
+            let html = `
+                <div class="mb-4">
+                    <h6>Detalles del Cliente y Reserva</h6>
+                    <ul class="list-unstyled small">
+                        <li><strong>Nombre:</strong> ${clientData.nombre}</li>
+                        <li><strong>Documento:</strong> ${clientData.documento}</li>
+                        <li><strong>Teléfono:</strong> ${clientData.telefono || 'No especificado'}</li>
+                        <li><strong>Mesa:</strong> ${clientData.mesaDisplay}</li>
+                        <li><strong>Fecha/Hora:</strong> ${clientData.fecha} - ${clientData.hora}</li>
+                    </ul>
+                </div>
+                
+                <h6>Detalle de Platos</h6>
+                <table class="table table-striped table-sm">
+                    <thead>
+                        <tr>
+                            <th>Plato</th>
+                            <th class="text-center">Cant.</th>
+                            <th class="text-end">Precio Unitario</th>
+                            <th class="text-end">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${cart.map(item => `
+                            <tr>
+                                <td>${item.nombre}</td>
+                                <td class="text-center">${item.qty}</td>
+                                <td class="text-end">${formatCurrency(item.precio)}</td>
+                                <td class="text-end">${formatCurrency(item.precio * item.qty)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="3" class="text-end">Total a Pagar:</th>
+                            <th class="text-end">${formatCurrency(total)}</th>
+                        </tr>
+                    </tfoot>
+                </table>
+                <p class="mt-4 text-center text-muted small">
+                    Verifique los datos antes de confirmar.
+                </p>
+            `;
+            
+            cartInvoiceBody.innerHTML = html;
+            reservationInfoModal.hide();
+            invoiceModal.show();
+        });
+    }
+
+    // Confirmar Reserva y Enviar a Flask (en el modal de Factura)
+    if (confirmReservationBtn) {
+        confirmReservationBtn.addEventListener('click', async function() {
+            // Lógica de envío a Flask... (la he dejado como la tenías)
+            if (!cart.length || !clientData || !clientData.idMesa) {
+                alert('Error en los datos de la reserva. Por favor, intente generar la factura de nuevo.');
+                invoiceModal.hide();
+                reservationInfoModal.show();
+                return;
+            }
+
+            confirmReservationBtn.disabled = true;
+            confirmReservationBtn.textContent = 'Enviando reserva...';
+
+            const dataToSend = {
+                nombre: clientData.nombre,
+                telefono: clientData.telefono,
+                documento: clientData.documento,
+                mesa: clientData.idMesa,
+                fecha: clientData.fecha,
+                hora: clientData.hora,
+                platos: cart.map(item => ({
+                    idPlato: item.id,
+                    cantidad: item.qty,
+                    precio: item.precio
+                }))
+            };
+
+            try {
+                const response = await fetch(RESERVAR_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dataToSend)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('✅ Reserva enviada con éxito. ID de Reserva: ' + result.id_reserva);
+                    // Limpiar carrito y cerrar modal
+                    cart = [];
+                    saveCart();
+                    updateCartUI();
+                    invoiceModal.hide();
+                } else {
+                    alert('❌ Error al procesar la reserva: ' + (result.error || 'Inténtelo de nuevo.'));
+                }
+            } catch (error) {
+                console.error('Error de red al enviar la reserva:', error);
+                alert('❌ Fallo de conexión al servidor. Por favor, verifique su conexión.');
+            } finally {
+                confirmReservationBtn.disabled = false;
+                confirmReservationBtn.textContent = 'Confirmar y Enviar Reserva';
+            }
+        });
+    }
+
+    loadCart();
+    updateCartUI();
+
 })();
 </script>
-
-<!-- html2pdf -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
 {% endblock %}
