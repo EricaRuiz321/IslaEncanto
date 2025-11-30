@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resort Encanto</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/static/styles.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg">
@@ -16,7 +16,6 @@
             <span class="ms-2 fw-bold fs-4 align-middle"> Hotel Isla Encanto</span>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
-                
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav">
@@ -50,38 +49,33 @@
             </div>
         </div>
     </nav>
-    <!-- Contenido principal -->
     <main>
         {% block content %}{% endblock %}
     </main>
-    <!-- Footer -->
-<footer class="bg-dark text-white text-center p-4 mt-auto">
-    <div class="container">
-        <p>© 2025 Hotel Isla Encanto | Todos los derechos reservados</p>
+    <footer class="bg-dark text-white text-center p-4 mt-auto">
+        <div class="container">
+            <p>© 2025 Hotel Isla Encanto | Todos los derechos reservados</p>
 
-        <!-- Redes sociales -->
-        <div class="d-flex justify-content-center gap-3">
-            <!-- Facebook -->
-            <a href="https://www.facebook.com/HotelIsladelEncanto" target="_blank" class="text-white">
-                <i class="bi bi-facebook" style="font-size: 1.5rem;"></i>
-            </a>
-            <!-- Instagram -->
-            <a href="https://www.instagram.com/hotelisladelencanto" target="_blank" class="text-white">
-                <i class="bi bi-instagram" style="font-size: 1.5rem;"></i>
-            </a>
-            <!-- WhatsApp -->
-            <a href="https://wa.me/573160270709" target="_blank" class="text-white">
-                <i class="bi bi-whatsapp" style="font-size: 1.5rem;"></i>
-            </a>
-            <!-- Youtube -->
-            <a href="https://www.youtube.com/@hotelisladelencanto3102" class="text-white">
-                <i class="bi bi-youtube" style="font-size: 1.5rem;"></i>
-            </a>
+            <div class="d-flex justify-content-center gap-3">
+                <a href="https://www.facebook.com/HotelIsladelEncanto" target="_blank" class="text-white">
+                    <i class="bi bi-facebook" style="font-size: 1.5rem;"></i>
+                </a>
+                <a href="https://www.instagram.com/hotelisladelencanto" target="_blank" class="text-white">
+                    <i class="bi bi-instagram" style="font-size: 1.5rem;"></i>
+                </a>
+                <a href="https://wa.me/573160270709" target="_blank" class="text-white">
+                    <i class="bi bi-whatsapp" style="font-size: 1.5rem;"></i>
+                </a>
+                <a href="https://www.youtube.com/@hotelisladelencanto3102" class="text-white">
+                    <i class="bi bi-youtube" style="font-size: 1.5rem;"></i>
+                </a>
+            </div>
         </div>
-    </div>
-</footer>
+    </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    {% block scripts %}{% endblock %}
 
 </body>
 </html>
