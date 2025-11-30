@@ -3,7 +3,7 @@ import os
 
 
 class Config:
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'mysql+pymysql://erica:ericac@isladigital.xyz:3311/f58_erica')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'mysql+pymysql://erica:ericac@mysql.enlinea.sbs:3311/f58_erica')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     SECRET_KEY = os.environ.get('SECRET_KEY', 'your_unique_and_secret_key')  # Clave secreta para sesiones
