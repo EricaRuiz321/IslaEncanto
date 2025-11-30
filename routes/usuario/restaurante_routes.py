@@ -9,7 +9,7 @@ usuario_restaurante = Blueprint('usuario_restaurante', __name__, url_prefix='/us
 
 @usuario_restaurante.route('/restaurante')
 def restaurante_usuario():
-    platos = NuevoPlato.query.order_by(NuevoPlato.categoria, NuevoPlato.nombre).all()
+    platos = NuevoPlato.query.order_by(NuevoPlato.nombre).all()
     mesas = NuevaMesa.query.filter_by(disponible=True).all()
     return render_template('usuario/restaurante_usuario.html', platos=platos, mesas=mesas)
 
@@ -84,7 +84,7 @@ def reservar():
     }
 
     # renderizar la misma vista mostrando invoice en modal
-    platos = NuevoPlato.query.order_by(NuevoPlato.categoria, NuevoPlato.nombre).all()
+    platos = NuevoPlato.query.order_by(NuevoPlato.nombre).all()
     mesas_disponibles = NuevaMesa.query.filter_by(disponible=True).all()
     return render_template('usuario/restaurante_usuario.html',
                            platos=platos,
