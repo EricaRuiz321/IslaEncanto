@@ -5,6 +5,7 @@ from config import Config
 from sqlalchemy import inspect, text
 from authlib.integrations.flask_client import OAuth
 from utils.extensions import db, bcrypt, serializer
+from flask_login import LoginManager, current_user # NECESARIO para Flask-Login
 
 # Registrar blueprints (añade estas importaciones/registro)
 from routes.dashboard.experiencias_routes import experiencias_bp, admin_bp as experiencias_admin_bp
@@ -18,12 +19,30 @@ def create_app():
     db.init_app(app)
     bcrypt.init_app(app)
 
+    # =======================================================
+    # INICIALIZACIÓN DE FLASK-LOGIN (Solución al AttributeError anterior)
+    # =======================================================
+    login_manager = LoginManager()
+    login_manager.init_app(app)
+    login_manager.login_view = 'registro.login'
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        # Importa el modelo Usuario dentro de la función para evitar problemas de importación circular
+        try:
+            from models.usuario import Usuario
+            return db.session.get(Usuario, int(user_id))
+        except Exception as e:
+            app.logger.warning(f"Error cargando usuario {user_id}: {e}")
+            return None
+    # =======================================================
+
     # serializer puede ser None o no exponer init_app -> inicializar solo si es compatible
     if serializer and hasattr(serializer, 'init_app'):
         serializer.init_app(app)
 
     # Registrar blueprints
-    app.register_blueprint(experiencias_bp)          # /experiencias
+    app.register_blueprint(experiencias_bp)            # /experiencias
     app.register_blueprint(experiencias_admin_bp)    # /admin/experiencias
 
     from itsdangerous import URLSafeTimedSerializer
@@ -37,15 +56,8 @@ def create_app():
     # ------------------------------------------------------------
     @app.context_processor
     def inject_current_user():
-        try:
-            from flask_login import current_user
-            is_auth = getattr(current_user, 'is_authenticated', False)
-        except Exception:
-            class _Anonymous:
-                is_authenticated = False
-
-            current_user = _Anonymous()
-            is_auth = False
+        # current_user ahora funciona correctamente gracias a la inicialización arriba
+        is_auth = getattr(current_user, 'is_authenticated', False)
 
         # Detectar endpoint de login disponible dentro del blueprint 'auth' (si existe)
         login_endpoint = None
@@ -208,10 +220,12 @@ def create_app():
     from routes.usuario.reservahuesped_routes import reservahuesped_bp
     from routes.usuario.perfil_usuario_routes import perfil_usuario_bp
     from routes.dashboard.estadisticasgenerales_routes import estadisticasgenerales_bp
+    from routes.dashboard.reservarmenu_routes import reservarmenu_bp
     from routes.dashboard.reservarmenu_routes import reservas_bp
     from routes.dashboard.nuevoplato_routes import nuevoplato_bp
     from routes.dashboard.nuevamesa_routes import nuevamesa_bp
     from routes.usuario.restaurante_routes import usuario_restaurante
+    from routes.usuario.comentario_routes import usuario_comentario_bp
 
     def safe_register(bp, prefix=None):
         """Registra un blueprint evitando duplicar prefijos."""
@@ -244,12 +258,14 @@ def create_app():
 
     # Dashboard admin
     safe_register(estadisticasgenerales_bp)
+    safe_register(reservarmenu_bp, prefix='/admin')
     safe_register(reservas_bp, prefix='/admin')
     safe_register(nuevoplato_bp, prefix='/admin')
     safe_register(nuevamesa_bp, prefix='/admin')
 
     # Usuario restaurante
     safe_register(usuario_restaurante)
+    safe_register(usuario_comentario_bp)
 
     # ------------------------------------------------------------
     # Aliases de Rutas (compatibilidad con plantillas)
