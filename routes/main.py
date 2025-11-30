@@ -25,7 +25,7 @@ def hospedaje():
 def restaurantes():
     # Mostrar platos en el home por sección
     try:
-        platos = NuevoPlato.query.order_by(NuevoPlato.categoria, NuevoPlato.nombre).all()
+        platos = NuevoPlato.query.order_by(NuevoPlato.nombre).all()
     except Exception:
         platos = []
     return render_template('home/Restaurante.html', platos=platos)
@@ -40,7 +40,7 @@ def nosotros():
 def experiencias():
     # Mostrar platos, habitaciones y comentarios reales desde la base de datos
     try:
-        platos = NuevoPlato.query.order_by(NuevoPlato.categoria, NuevoPlato.nombre).all()
+        platos = NuevoPlato.query.order_by(NuevoPlato.nombre).all()
     except Exception:
         platos = []
 
@@ -90,7 +90,7 @@ def nosotros_usuario():
 def restaurante_usuario():
     # Mostrar platos también en la vista de usuario
     try:
-        platos = NuevoPlato.query.order_by(NuevoPlato.categoria, NuevoPlato.nombre).all()
+        platos = NuevoPlato.query.order_by(NuevoPlato.nombre).all()
     except Exception:
         platos = []
     try:
@@ -104,7 +104,7 @@ def restaurante_usuario():
 def experiencias_usuario():
     # Asegurar que la plantilla recibe los mismos objetos que la vista pública
     try:
-        platos = NuevoPlato.query.order_by(NuevoPlato.categoria, NuevoPlato.nombre).all()
+        platos = NuevoPlato.query.order_by(NuevoPlato.nombre).all()
     except Exception:
         platos = []
     try:
@@ -178,8 +178,28 @@ def restaurante_admin():
 
 @main_bp.route('/experiencias_admin')
 def experiencias_admin():
-    return render_template('dashboard/experiencias_admin.html')
-
+    # Asegúrate de importar los modelos necesarios si no lo están ya
+    from models.comentario import Comentario 
+    
+    try:
+        platos = NuevoPlato.query.order_by(NuevoPlato.nombre).all()
+    except Exception:
+        platos = []
+    try:
+        habitaciones = NuevaHabitacion.query.order_by(NuevaHabitacion.id.desc()).all()
+    except Exception:
+        habitaciones = []
+    try:
+        # El administrador ve TODOS los comentarios, no solo los suyos
+        comentarios = Comentario.query.order_by(Comentario.created_at.desc()).all()
+    except Exception:
+        comentarios = []
+        
+    # Asume que tienes un Blueprint llamado 'experiencias_admin' para las rutas de acción
+    return render_template('dashboard/experiencias_admin.html', 
+                           platos=platos, 
+                           habitaciones=habitaciones, 
+                           comentarios=comentarios)
 
 @main_bp.route('/nosotros_admin')
 def nosotros_admin():
