@@ -1,69 +1,336 @@
 {% extends 'dashboard/base.html' %}
 {% block content %}
-<div class="container mt-4">
-  <h3>Comentarios — administración</h3>
-  <a class="btn btn-primary mb-3" href="{{ url_for('experiencias_admin.admin_list') }}">Refrescar</a>
+<br>
+<div class="container mt-3">
+    <h2>Gestión de Experiencias y Comentarios 👑</h2>
 
-  <div class="list-group">
-    {% for c in comentarios %}
-      <div class="list-group-item d-flex justify-content-between align-items-start">
-        <div>
-          <strong>{{ c.user.usuario if c.user else 'Anon' }}</strong>
-          <div class="small text-muted">{{ c.created_at.strftime('%d %b %Y %H:%M') if c.created_at else '' }}</div>
-          {% if c.plato_id %}
-            <div class="small text-secondary">Plato: #{{ c.plato_id }}</div>
-          {% elif c.habitacion_id %}
-            <div class="small text-secondary">Habitación: #{{ c.habitacion_id }}</div>
-          {% endif %}
-          <div class="mt-2">{{ c.contenido }}</div>
-        </div>
-        <div class="text-end">
-          <!-- Botón editar abre modal específico -->
-          <button class="btn btn-sm btn-outline-secondary mb-2" data-bs-toggle="modal" data-bs-target="#modalEdit{{ c.idComentario }}">Editar</button>
+    <div class="mb-3">
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addCommentModalAdmin" data-tipo="general" data-item="">Añadir Comentario General</button>
+    </div>
+    
+    <hr>
+    
+    <section class="mt-4">
+        <h4>Habitaciones para Comentar/Revisar</h4>
+        <div class="row g-2">
+            {% if habitaciones %}
+              {% for h in habitaciones %}
+                <div class="col-sm-6 col-md-3">
+                  <div class="card">
+                    <img src="{{ url_for('static', filename=(h.imagen if h.imagen else 'img/habitacion(1).png')) }}" class="card-img-top" style="height:160px; object-fit:cover;">
+                    <div class="card-body">
+                      <h6 class="card-title mb-1">{{ h.nombre or ('Habitación ' ~ h.id) }}</h6>
+                      <p class="small text-muted mb-1">{{ h.descripcion[:80] if h.descripcion else '' }}</p>
+                      
+                      <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#addCommentModalAdmin" data-tipo="habitacion" data-item="{{ h.id }}">Añadir comentario</button>
 
-          <form method="POST" action="{{ url_for('experiencias_admin.admin_delete', comentario_id=c.idComentario) }}" style="display:inline;">
-            <button class="btn btn-sm btn-danger" onclick="return confirm('Eliminar comentario?')">Eliminar</button>
-          </form>
-        </div>
-
-        <!-- Modal de edición (por comentario) -->
-        <div class="modal fade" id="modalEdit{{ c.idComentario }}" tabindex="-1" aria-hidden="true">
-          <div class="modal-dialog modal-dialog-centered">
-            <form method="POST" action="{{ url_for('experiencias_admin.admin_edit', comentario_id=c.idComentario) }}">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title">Editar comentario</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                      <div class="mt-3">
+                        <span class="small text-secondary">Comentarios:</span>
+                        {% for c in comentarios %}
+                          {% if c.habitacion_id and c.habitacion_id == h.id %}
+                            <div class="border rounded p-2 mb-2 bg-light">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>{{ c.user.usuario if c.user else 'Anon' }}</strong>
+                                        {# Eliminado: <span class="badge bg-info text-dark">Habitación #{{ h.id }}</span> #}
+                                        <div class="small text-muted">{{ c.created_at.strftime('%d %b %Y') if c.created_at else '' }}</div>
+                                    </div>
+                                    <div class="text-end">
+                                        <button class="btn btn-sm **btn-success**" data-bs-toggle="modal" data-bs-target="#modalEditAdmin{{ c.idComentario }}">Editar</button>
+                                        <form method="POST" action="{{ url_for('experiencias_admin.admin_delete', comentario_id=c.idComentario) }}" style="display:inline;">
+                                            <button class="btn btn-sm btn-danger" onclick="return confirm('¿Seguro que quieres eliminar este comentario?')">Eliminar</button>
+                                        </form>
+                                    </div>
+                                </div>
+                                <p class="mb-0 mt-2">{{ c.contenido }}</p>
+                            </div>
+                            
+                            <div class="modal fade" id="modalEditAdmin{{ c.idComentario }}" tabindex="-1" aria-labelledby="editCommentModalLabel{{ c.idComentario }}" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-warning text-dark">
+                                            <h5 class="modal-title" id="editCommentModalLabel{{ c.idComentario }}">✏️ Editar Comentario #{{ c.idComentario }} (Admin)</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                        </div>
+                                        
+                                        <form action="{{ url_for('experiencias_admin.admin_edit', comentario_id=c.idComentario) }}" method="POST"> 
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label for="edit_contenido_{{ c.idComentario }}" class="form-label">Contenido:</label>
+                                                    <textarea class="form-control" id="edit_contenido_{{ c.idComentario }}" name="contenido" rows="4" required>{{ c.contenido }}</textarea>
+                                                </div>
+            
+                                                <div class="mb-3">
+                                                    <label for="edit_rating_{{ c.idComentario }}" class="form-label">Calificación (1 a 5):</label>
+                                                    <select class="form-select" id="edit_rating_{{ c.idComentario }}" name="rating" required>
+                                                        <option value="5" {% if c.rating == 5 %}selected{% endif %}>5 - Excelente</option>
+                                                        <option value="4" {% if c.rating == 4 %}selected{% endif %}>4 - Muy Bueno</option>
+                                                        <option value="3" {% if c.rating == 3 %}selected{% endif %}>3 - Aceptable</option>
+                                                        <option value="2" {% if c.rating == 2 %}selected{% endif %}>2 - Malo</option>
+                                                        <option value="1" {% if c.rating == 1 %}selected{% endif %}>1 - Pésimo</option>
+                                                    </select>
+                                                </div>
+                                                
+                                                {# Mantenemos el ID solo en el modal para referencia del admin #}
+                                                <p class="small text-info mb-0">Tipo: Habitación #{{ c.habitacion_id }}</p>
+                                                <p class="small text-muted">Autor: {{ c.user.usuario if c.user else 'Anónimo' }}</p>
+            
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                <button type="submit" class="btn btn-warning">Guardar Cambios</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                          {% endif %}
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              {% endfor %}
+            {% else %}
+              <div class="small text-muted p-2">No hay habitaciones para mostrar.</div>
+            {% endif %}
+        </div>
+    </section>
+
+    <hr class="my-4">
+
+    <section class="mt-4">
+        <h4>Platos para Comentar/Revisar</h4>
+        <div class="row g-2">
+            {% if platos %}
+              {% for p in platos %}
+                <div class="col-sm-6 col-md-3">
+                  <div class="card">
+                    <img src="{{ url_for('static', filename=(p.imagen if p.imagen else 'img/r1.jpg')) }}" class="card-img-top" style="height:160px; object-fit:cover;">
+                    <div class="card-body">
+                      <h6 class="card-title mb-1">{{ p.nombre }}</h6>
+                      <p class="small text-muted mb-1">{{ p.descripcion[:60] if p.descripcion }}</p>
+                      
+                      <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#addCommentModalAdmin" data-tipo="plato" data-item="{{ p.idPlato }}">Añadir comentario</button>
+
+                      <div class="mt-3">
+                        <span class="small text-secondary">Comentarios:</span>
+                        {% for c in comentarios %}
+                          {% if c.plato_id and c.plato_id == p.idPlato %}
+                            <div class="border rounded p-2 mb-2 bg-light">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>{{ c.user.usuario if c.user else 'Anon' }}</strong>
+                                        {# Eliminado: <span class="badge bg-info text-dark">Plato #{{ p.idPlato }}</span> #}
+                                        <div class="small text-muted">{{ c.created_at.strftime('%d %b %Y') if c.created_at else '' }}</div>
+                                    </div>
+                                    <div class="text-end">
+                                        <button class="btn btn-sm **btn-success**" data-bs-toggle="modal" data-bs-target="#modalEditAdmin{{ c.idComentario }}">Editar</button>
+                                        <form method="POST" action="{{ url_for('experiencias_admin.admin_delete', comentario_id=c.idComentario) }}" style="display:inline;">
+                                            <button class="btn btn-sm btn-danger" onclick="return confirm('¿Seguro que quieres eliminar este comentario?')">Eliminar</button>
+                                        </form>
+                                    </div>
+                                </div>
+                                <p class="mb-0 mt-2">{{ c.contenido }}</p>
+                            </div>
+                            
+                            <div class="modal fade" id="modalEditAdmin{{ c.idComentario }}" tabindex="-1" aria-labelledby="editCommentModalLabel{{ c.idComentario }}" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-warning text-dark">
+                                            <h5 class="modal-title" id="editCommentModalLabel{{ c.idComentario }}">✏️ Editar Comentario #{{ c.idComentario }} (Admin)</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                        </div>
+                                        
+                                        <form action="{{ url_for('experiencias_admin.admin_edit', comentario_id=c.idComentario) }}" method="POST"> 
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label for="edit_contenido_{{ c.idComentario }}" class="form-label">Contenido:</label>
+                                                    <textarea class="form-control" id="edit_contenido_{{ c.idComentario }}" name="contenido" rows="4" required>{{ c.contenido }}</textarea>
+                                                </div>
+            
+                                                <div class="mb-3">
+                                                    <label for="edit_rating_{{ c.idComentario }}" class="form-label">Calificación (1 a 5):</label>
+                                                    <select class="form-select" id="edit_rating_{{ c.idComentario }}" name="rating" required>
+                                                        <option value="5" {% if c.rating == 5 %}selected{% endif %}>5 - Excelente</option>
+                                                        <option value="4" {% if c.rating == 4 %}selected{% endif %}>4 - Muy Bueno</option>
+                                                        <option value="3" {% if c.rating == 3 %}selected{% endif %}>3 - Aceptable</option>
+                                                        <option value="2" {% if c.rating == 2 %}selected{% endif %}>2 - Malo</option>
+                                                        <option value="1" {% if c.rating == 1 %}selected{% endif %}>1 - Pésimo</option>
+                                                    </select>
+                                                </div>
+                                                
+                                                {# Mantenemos el ID solo en el modal para referencia del admin #}
+                                                <p class="small text-info mb-0">Tipo: Plato #{{ c.plato_id }}</p>
+                                                <p class="small text-muted">Autor: {{ c.user.usuario if c.user else 'Anónimo' }}</p>
+            
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                <button type="submit" class="btn btn-warning">Guardar Cambios</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                          {% endif %}
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="small text-muted p-2">No hay platos para mostrar.</div>
+            {% endif %}
+        </div>
+    </section>
+
+    <hr class="my-4">
+    
+    <div class="mt-3">
+        <h4>Comentarios Generales (Globales)</h4>
+        {% for comentario in comentarios %}
+            {% if not comentario.plato_id and not comentario.habitacion_id %}
+                <div class="card mb-2 bg-light">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ comentario.user.usuario if comentario.user else 'Anon' }}</strong>
+                                <span class="badge bg-primary">General</span>
+                                <div class="small text-muted">{{ comentario.created_at.strftime('%d %b %Y %H:%M') if comentario.created_at else '' }}</div>
+                            </div>
+                            <div class="text-end">
+                                {% for i in range(1,6) %}
+                                    {% if i <= (comentario.rating or 0) %}
+                                        <span style="color:#f1c40f">★</span>
+                                    {% else %}
+                                        <span style="color:#dcdcdc">☆</span>
+                                    {% endif %}
+                                {% endfor %}
+                                <div class="mt-2">
+                                    <button class="btn btn-sm **btn-success**" data-bs-toggle="modal" data-bs-target="#modalEditAdmin{{ comentario.idComentario }}">Editar</button>
+                                    <form method="POST" action="{{ url_for('experiencias_admin.admin_delete', comentario_id=comentario.idComentario) }}" style="display:inline;">
+                                        <button class="btn btn-sm btn-danger" onclick="return confirm('¿Seguro que quieres eliminar este comentario?')">Eliminar</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="mt-2 mb-0">{{ comentario.contenido }}</p>
+                    </div>
+                </div>
+                
+                <div class="modal fade" id="modalEditAdmin{{ comentario.idComentario }}" tabindex="-1" aria-labelledby="editCommentModalLabel{{ comentario.idComentario }}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-warning text-dark">
+                                <h5 class="modal-title" id="editCommentModalLabel{{ comentario.idComentario }}">✏️ Editar Comentario #{{ comentario.idComentario }} (Admin)</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                            </div>
+                            
+                            <form action="{{ url_for('experiencias_admin.admin_edit', comentario_id=comentario.idComentario) }}" method="POST"> 
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label for="edit_contenido_{{ comentario.idComentario }}" class="form-label">Contenido:</label>
+                                        <textarea class="form-control" id="edit_contenido_{{ comentario.idComentario }}" name="contenido" rows="4" required>{{ comentario.contenido }}</textarea>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="edit_rating_{{ comentario.idComentario }}" class="form-label">Calificación (1 a 5):</label>
+                                        <select class="form-select" id="edit_rating_{{ comentario.idComentario }}" name="rating" required>
+                                            <option value="5" {% if comentario.rating == 5 %}selected{% endif %}>5 - Excelente</option>
+                                            <option value="4" {% if comentario.rating == 4 %}selected{% endif %}>4 - Muy Bueno</option>
+                                            <option value="3" {% if comentario.rating == 3 %}selected{% endif %}>3 - Aceptable</option>
+                                            <option value="2" {% if comentario.rating == 2 %}selected{% endif %}>2 - Malo</option>
+                                            <option value="1" {% if comentario.rating == 1 %}selected{% endif %}>1 - Pésimo</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <p class="small text-info mb-0">Tipo: General</p>
+                                    <p class="small text-muted">Autor: {{ comentario.user.usuario if comentario.user else 'Anónimo' }}</p>
+
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-warning">Guardar Cambios</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            {% endif %}
+        {% else %}
+            <div class="small text-muted">Aún no hay comentarios generales.</div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<div class="modal fade" id="addCommentModalAdmin" tabindex="-1" aria-labelledby="addCommentModalAdminLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="addCommentModalAdminLabel">✍️ Añadir un Comentario (Admin)</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form action="{{ url_for('experiencias.add_comment') }}" method="POST"> 
                 <div class="modal-body">
-                  <div class="mb-3">
-                    <label class="form-label">Contenido</label>
-                    <textarea class="form-control" name="contenido" rows="4" required>{{ c.contenido }}</textarea>
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">Rating</label>
-                    <select name="rating" class="form-select" style="width:120px;">
-                      <option value="">--</option>
-                      <option value="5" {% if c.rating == 5 %}selected{% endif %}>5</option>
-                      <option value="4" {% if c.rating == 4 %}selected{% endif %}>4</option>
-                      <option value="3" {% if c.rating == 3 %}selected{% endif %}>3</option>
-                      <option value="2" {% if c.rating == 2 %}selected{% endif %}>2</option>
-                      <option value="1" {% if c.rating == 1 %}selected{% endif %}>1</option>
-                    </select>
-                  </div>
+                    
+                    <input type="hidden" name="tipo" id="modal_tipo_admin">
+                    <input type="hidden" name="item_id" id="modal_item_admin">
+
+                    <div class="mb-3">
+                        <label for="contenido_admin" class="form-label">Contenido:</label>
+                        <textarea class="form-control" id="contenido_admin" name="contenido" rows="4" placeholder="Escribe el comentario..." required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="rating_admin" class="form-label">Calificación (1 a 5):</label>
+                        <select class="form-select" id="rating_admin" name="rating" required>
+                            <option value="" disabled selected>Selecciona una calificación</option>
+                            <option value="5">5 - Excelente</option>
+                            <option value="4">4 - Muy Bueno</option>
+                            <option value="3">3 - Aceptable</option>
+                            <option value="2">2 - Malo</option>
+                            <option value="1">1 - Pésimo</option>
+                        </select>
+                    </div>
+
                 </div>
                 <div class="modal-footer">
-                  <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                  <button class="btn btn-primary" type="submit">Guardar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Publicar</button>
                 </div>
-              </div>
             </form>
-          </div>
         </div>
-      </div>
-    {% else %}
-      <div class="small text-muted">No hay comentarios aún.</div>
-    {% endfor %}
-  </div>
+    </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    // Lógica para llenar los campos ocultos del modal de AÑADIR (Admin)
+    var addModalAdmin = document.getElementById('addCommentModalAdmin');
+    if (addModalAdmin) {
+        addModalAdmin.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget; 
+            var tipo = button ? button.getAttribute('data-tipo') : 'general';
+            var item_id = button ? button.getAttribute('data-item') : '';
+            
+            document.getElementById('modal_tipo_admin').value = tipo;
+            document.getElementById('modal_item_admin').value = item_id;
+
+            var titulo = document.getElementById('addCommentModalAdminLabel');
+            if (tipo === 'habitacion') {
+                titulo.innerHTML = '✍️ Añadir Comentario sobre Habitación #'+item_id;
+            } else if (tipo === 'plato') {
+                titulo.innerHTML = '✍️ Añadir Comentario sobre Plato #'+item_id;
+            } else {
+                titulo.innerHTML = '✍️ Añadir un Comentario General';
+            }
+        });
+    }
+});
+</script>
+
 {% endblock %}
