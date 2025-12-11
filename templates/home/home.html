@@ -1,0 +1,69 @@
+{% extends 'home/base.html' %}
+
+{% block title %}Resort Encanto{% endblock %}
+
+{% block content %}
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <div class="hero">
+        <video autoplay muted loop class="video-background">
+            <source src="{{ url_for('static', filename='img/video.mp4') }}" type="video/mp4">
+            Tu navegador no soporta el elemento de video.
+        </video>
+        
+    </div>
+
+    <style>
+        .video-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1;
+        }
+        .hero {
+            position: relative;
+            color: #f4eeeeff;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+    </style>
+
+    <script>
+        window.onscroll = function() {
+            const navbar = document.querySelector('.navbar');
+            if (document.body.scrollTop > 50 || document.documentElement.scrollTop > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        };
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <div class="container mt-5">
+        <div class="row align-items-stretch">
+            <div class="col-md-6">
+                <img src="{{ url_for('static', filename='img/playa(1).jpg') }}" class="img-fluid rounded proportional-img" alt="Ecolodge">
+            </div>
+            <div class="col-md-6">
+                <h1 class="display-4">Vive el encanto de Barú Cartagena</h1>
+                <p class="lead">Bienvenidos a nuestro Ecolodge Superior.</p>
+                <p>Descubre un escape soñado a solo una hora de la ciudad amurallada en Cartagena, Colombia. El Hotel Isla del Encanto Barú ofrece un destino con total relajación acompañado de mágicos y asombrosos paisajes en el Parque Natural Corales del Rosario. Su acceso es por vía marítima o terrestre, nuestro complejo ofrece 10 hectáreas de tierra virgen acompañada de árboles frutales, arbustos, palmeras y manglares.</p>
+                <h2 class="mt-4">Un paraíso terrenal.</h2>
+                <p>Localizado en un tramo pristino frente a la zona insular de Barú, Cartagena. Nuestro hotel es un paraíso terrenal, un verdadero santuario donde cuerpo, mente y espíritu se desconectan de la vida diaria para un total tiempo de reabastecimiento y relajación. Cada detalle en nuestro hotel fue meticulosamente diseñado para garantizar unas vacaciones inolvidables en Colombia.</p>
+                <a href="#" class="btn btn-warning">→</a>
+            </div>
+        </div>
+    </div>
+    
+    
+{% endblock %}
