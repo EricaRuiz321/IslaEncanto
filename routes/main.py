@@ -225,4 +225,4 @@ def demo_login():
             session['rol'] = 'usuario'
             return redirect(url_for('main.home_usuario'))
 
-    return render_template('home/Login.html')
+    return render_template('home/login.html')
