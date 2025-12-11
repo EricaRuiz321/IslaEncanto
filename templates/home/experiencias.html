@@ -1,0 +1,136 @@
+{% extends 'home/base.html' %}
+
+{% block title %}Experiencias{% endblock %}
+
+{% block content %}
+<br>
+<div class="container mt-5">
+    <h2>Experiencias de nuestros huéspedes</h2>
+
+    <section class="mt-4">
+        <h4>Habitaciones</h4>
+        <div class="row g-2">
+            {% if habitaciones %}
+              {% for h in habitaciones %}
+                <div class="col-sm-6 col-md-3">
+                  <div class="card">
+                    <img src="{{ url_for('static', filename=(h.imagen if h.imagen else 'img/habitacion(1).png')) }}" class="card-img-top" style="height:160px; object-fit:cover;">
+                    <div class="card-body">
+                      <h6 class="card-title mb-1">{{ h.nombre or ('Habitación ' ~ h.id) }}</h6>
+                      <p class="small text-muted mb-1">{{ h.descripcion[:80] if h.descripcion else '' }}</p>
+                      
+                      {% if not is_authenticated %}
+                          <a href="{{ url_for('auth.login') if 'auth' in request.endpoint else url_for('login') }}" class="btn btn-sm btn-outline-warning">Inicia sesión para comentar</a>
+                      {% endif %}
+
+                      <div class="mt-3">
+                        <span class="small text-secondary">Comentarios:</span>
+                        {% for c in comentarios %}
+                          {% if c.habitacion_id and c.habitacion_id == h.id %}
+                            <div class="border rounded p-2 mb-2">
+                              <div class="d-flex justify-content-between">
+                                <div>
+                                  <strong>{{ c.user.usuario if c.user else 'Anon' }}</strong>
+                                  <div class="small text-muted">{{ c.created_at.strftime('%d %b %Y') if c.created_at else '' }}</div>
+                                </div>
+                                </div>
+                              <p class="mb-0 mt-2">{{ c.contenido }}</p>
+                            </div>
+                          {% endif %}
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="small text-muted p-2">No hay habitaciones para mostrar.</div>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="mt-4">
+        <h4>Platos</h4>
+        <div class="row g-2">
+            {% if platos %}
+              {% for p in platos %}
+                <div class="col-sm-6 col-md-3">
+                  <div class="card">
+                    <img src="{{ url_for('static', filename=(p.imagen if p.imagen else 'img/r1.jpg')) }}" class="card-img-top" style="height:160px; object-fit:cover;">
+                    <div class="card-body">
+                      <h6 class="card-title mb-1">{{ p.nombre }}</h6>
+                      <p class="small text-muted mb-1">{{ p.descripcion[:60] if p.descripcion }}</p>
+                      
+                      {% if not is_authenticated %}
+                          <a href="{{ url_for('auth.login') if 'auth' in request.endpoint else url_for('login') }}" class="btn btn-sm btn-outline-warning">Inicia sesión para comentar</a>
+                      {% endif %}
+
+                      <div class="mt-3">
+                        <span class="small text-secondary">Comentarios:</span>
+                        {% for c in comentarios %}
+                          {% if c.plato_id and c.plato_id == p.idPlato %}
+                            <div class="border rounded p-2 mb-2">
+                              <div class="d-flex justify-content-between">
+                                <div>
+                                  <strong>{{ c.user.usuario if c.user else 'Anon' }}</strong>
+                                  <div class="small text-muted">{{ c.created_at.strftime('%d %b %Y') if c.created_at else '' }}</div>
+                                </div>
+                              </div>
+                              <p class="mb-0 mt-2">{{ c.contenido }}</p>
+                            </div>
+                          {% endif %}
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="small text-muted p-2">No hay platos para mostrar.</div>
+            {% endif %}
+        </div>
+    </section>
+
+    <hr class="my-4">
+
+    <div class="mt-3">
+        <h5>Comentarios Generales</h5>
+        <div class="mt-3">
+          <span class="small text-secondary">Comentarios:</span>
+        </div>
+        
+        {% if not is_authenticated %}
+            <a href="{{ url_for('auth.login') if 'auth' in request.endpoint else url_for('login') }}" class="btn btn-outline-primary mb-3">Inicia sesión para comentar</a>
+        {% endif %}
+
+        {% for comentario in comentarios %}
+          {% if not comentario.plato_id and not comentario.habitacion_id %}
+            <div class="card mb-2">
+              <div class="card-body">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <strong>{{ comentario.user.usuario if comentario.user else 'Anon' }}</strong>
+                    <div class="small text-muted">{{ comentario.created_at.strftime('%d %b %Y') if comentario.created_at else '' }}</div>
+                  </div>
+                  <div>
+                    {% for i in range(1,6) %}
+                      {% if i <= (comentario.rating or 0) %}
+                        <span style="color:#f1c40f">★</span>
+                      {% else %}
+                        <span style="color:#dcdcdc">☆</span>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+                <p class="mt-2 mb-0">{{ comentario.contenido }}</p>
+              </div>
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="small text-muted">Aún no hay comentarios generales.</div>
+        {% endfor %}
+    </div>
+</div>
+
+
+{% endblock %}
