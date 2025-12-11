@@ -100,7 +100,7 @@
         </div>
         
         {% if not is_authenticated %}
-            <a href="{{ url_for('auth.login') if 'auth' in request.endpoint else url_for('login') }}" class="btn btn-outline-primary mb-3">Inicia sesión para comentar</a>
+            <a href="{{ url_for('login') }}" class="btn btn-sm btn-outline-warning">Inicia sesión para comentar</a>>
         {% endif %}
 
         {% for comentario in comentarios %}
