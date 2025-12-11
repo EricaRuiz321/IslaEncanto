@@ -28,12 +28,12 @@ def restaurantes():
         platos = NuevoPlato.query.order_by(NuevoPlato.nombre).all()
     except Exception:
         platos = []
-    return render_template('home/Restaurante.html', platos=platos)
+    return render_template('home/restaurante.html', platos=platos)
 
 
 @main_bp.route('/nosotros')
 def nosotros():
-    return render_template('home/Nosotros.html')
+    return render_template('home/nosotros.html')
 
 
 @main_bp.route('/Experiencias', methods=['GET', 'POST'])
@@ -64,7 +64,7 @@ def experiencias():
     if not is_auth:
         is_auth = bool(session.get('rol') or session.get('user'))
 
-    return render_template('home/Experiencias.html', platos=platos, habitaciones=habitaciones, comentarios=comentarios, is_authenticated=is_auth)
+    return render_template('home/experiencias.html', platos=platos, habitaciones=habitaciones, comentarios=comentarios, is_authenticated=is_auth)
 
 
 # -----------------------------------------------------------
